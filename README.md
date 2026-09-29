@@ -24,6 +24,7 @@ Monolito modular cliente-servidor (sin microservicios por ahora):
 | `app/`     | Kotlin, Jetpack Compose, Maps, Fused Location | App del teléfono: componente principal     |
 | `backend/` | Java 21, Spring Boot 4, JPA, Flyway  | API REST, autenticación JWT, persistencia          |
 | `wear/`    | Kotlin, Compose for Wear OS          | Reloj: estados seguro/precaución/alerta, vibración, SOS |
+| `watch-core/` | Kotlin, Compose                   | Interfaz y lógica del reloj (la usan `wear/` y el reloj emulado del teléfono) |
 | `shared/`  | Kotlin (librería Android)            | Protocolo reloj ↔ teléfono (Wearable Data Layer)   |
 | `ml/`      | Python, scikit-learn                 | *(Fase 4)* modelo de riesgo por zona               |
 
@@ -75,7 +76,7 @@ app/src/main/java/com/andres/walksecurity/
       umbral configurable (seguro < 0.4 ≤ precaución < 0.7 ≤ alerta)
 - [x] **Fase 3** *(adelantada, prioridad del proyecto)* – Módulo `wear/`: 3 estados + SOS, vibración,
       comunicación con el teléfono (Wearable Data Layer). Mientras llega la fase 2, el estado de riesgo
-      se prueba con el **simulador** de la pantalla principal del teléfono (solo builds debug).
+      se prueba con el **simulador** de la pantalla *Reloj emulado* del teléfono.
 - [ ] **Fase 4** – Modelo scikit-learn (lat/lng, hora, día, histórico de incidentes) que actualiza `risk_zones.risk_score`
 
 ## Cómo ejecutar y probar en tu teléfono (sin emulador)
@@ -141,7 +142,27 @@ Desde Android Studio (▶ Run con el teléfono seleccionado) o:
 
 > Los SMS los cobra tu operador según tu plan.
 
-## Probar en el reloj (Wear OS)
+## Probar el reloj sin tener reloj (reloj emulado)
+
+La pantalla **Reloj emulado** del teléfono (tarjeta *Reloj* en la pantalla principal) ejecuta la
+**misma interfaz y la misma lógica** del reloj (`watch-core`), dibujada en un marco redondo a escala real.
+Solo cambia el transporte: en lugar del Wearable Data Layer usa llamadas directas dentro de la app.
+
+1. Abre *Reloj emulado*.
+2. En *Simular zona* pulsa **Precaución** → el teléfono vibra corto y el reloj pasa a ámbar.
+3. Pulsa **Alerta** → vibración larga y el reloj pregunta *¿Estás bien?*.
+   *Emergencia* envía el SOS real; *Estoy bien* lo descarta.
+4. Pulsa **SOS** en el reloj → cuenta regresiva de 5 s → llegan los SMS ("desde su reloj")
+   y el reloj muestra cuántos se enviaron.
+
+```
+            ┌────────────── watch-core (UI + WatchController) ──────────────┐
+Reloj real: │ DataLayerWatchTransport ──Data Layer──► PhoneWearListenerService │──► AlertRepository
+Emulado:    │ EmulatedWatchTransport ─────────── llamada directa ────────────│──► AlertRepository
+            └────────────────────────────────────────────────────────────────┘
+```
+
+## Probar en un reloj Wear OS real
 
 Requisitos: un reloj **Wear OS 3 o superior** (Pixel Watch, Galaxy Watch 4+, TicWatch, etc.) emparejado
 con el teléfono mediante su app oficial (*Pixel Watch*, *Galaxy Wearable* o *Wear OS by Google*).
