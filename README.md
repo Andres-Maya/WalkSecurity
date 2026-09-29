@@ -23,7 +23,8 @@ Monolito modular cliente-servidor (sin microservicios por ahora):
 |------------|--------------------------------------|---------------------------------------------------|
 | `app/`     | Kotlin, Jetpack Compose, Maps, Fused Location | App del teléfono: componente principal     |
 | `backend/` | Java 21, Spring Boot 4, JPA, Flyway  | API REST, autenticación JWT, persistencia          |
-| `wear/`    | Kotlin, Compose for Wear OS          | *(Fase 3)* estados seguro/precaución/alerta + SOS  |
+| `wear/`    | Kotlin, Compose for Wear OS          | Reloj: estados seguro/precaución/alerta, vibración, SOS |
+| `shared/`  | Kotlin (librería Android)            | Protocolo reloj ↔ teléfono (Wearable Data Layer)   |
 | `ml/`      | Python, scikit-learn                 | *(Fase 4)* modelo de riesgo por zona               |
 
 ### Decisiones clave
@@ -36,6 +37,19 @@ Monolito modular cliente-servidor (sin microservicios por ahora):
 - El envío del SOS corre en un scope de aplicación: no se cancela si el usuario cambia de pantalla.
 - El GPS continuo solo está activo mientras la pantalla principal es visible (batería).
   El seguimiento en segundo plano llegará con el geofencing (fase 2) vía un Foreground Service.
+
+### Reloj ↔ teléfono
+
+```
+Teléfono ──DataItem /walksecurity/risk-status──► Reloj   (estado persistente: SAFE | CAUTION | ALERT)
+Reloj    ──Message  /walksecurity/sos──────────► Teléfono (envía SMS + registra en el API)
+Teléfono ──DataItem /walksecurity/sos-result───► Reloj   (confirmación: cuántos SMS salieron)
+```
+
+- El reloj **vibra** al subir de nivel (patrón distinto para precaución y alerta) y muestra una notificación
+  aunque la app esté cerrada. En **alerta** pregunta "¿Estás bien?": *Emergencia* envía el SOS de inmediato.
+- El botón SOS del reloj tiene cuenta regresiva de 5 s (se puede cancelar o enviar ya).
+- Ambas apps comparten `applicationId` y firma: es un requisito del Data Layer.
 
 ### Estructura de la app
 
@@ -59,14 +73,23 @@ app/src/main/java/com/andres/walksecurity/
 - [x] **Fase 1** – Registro/login, GPS, mapa, contactos de confianza, botón SOS (SMS + registro en API)
 - [ ] **Fase 2** – Zonas de riesgo (API + mapa), Geofencing API en segundo plano, notificaciones y
       umbral configurable (seguro < 0.4 ≤ precaución < 0.7 ≤ alerta)
-- [ ] **Fase 3** – Módulo `wear/`: 3 estados + SOS, vibración, comunicación con el teléfono (Wearable Data Layer)
+- [x] **Fase 3** *(adelantada, prioridad del proyecto)* – Módulo `wear/`: 3 estados + SOS, vibración,
+      comunicación con el teléfono (Wearable Data Layer). Mientras llega la fase 2, el estado de riesgo
+      se prueba con el **simulador** de la pantalla principal del teléfono (solo builds debug).
 - [ ] **Fase 4** – Modelo scikit-learn (lat/lng, hora, día, histórico de incidentes) que actualiza `risk_zones.risk_score`
 
 ## Cómo ejecutar y probar en tu teléfono (sin emulador)
 
 ### 1. Backend
 
-Requisitos: Docker Desktop **abierto** y JDK 21+.
+Forma rápida en Windows (limpia sockets huérfanos de Docker, abre Docker, levanta Postgres,
+hace `adb reverse` y arranca el backend):
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/dev-up.ps1
+```
+
+Paso a paso — requisitos: Docker Desktop **abierto** y JDK 21+.
 
 ```bash
 cd backend
@@ -117,6 +140,33 @@ Desde Android Studio (▶ Run con el teléfono seleccionado) o:
 4. En la consola del backend aparece `Alerta SOS #...` y el registro queda en la tabla `alerts`.
 
 > Los SMS los cobra tu operador según tu plan.
+
+## Probar en el reloj (Wear OS)
+
+Requisitos: un reloj **Wear OS 3 o superior** (Pixel Watch, Galaxy Watch 4+, TicWatch, etc.) emparejado
+con el teléfono mediante su app oficial (*Pixel Watch*, *Galaxy Wearable* o *Wear OS by Google*).
+
+1. En el reloj: *Ajustes → Sistema → Información → toca 7 veces "Número de compilación"* para activar las
+   opciones de desarrollador; luego *Opciones de desarrollador → Depuración por Wi-Fi* (reloj y PC en la misma red).
+2. Empareja y conecta desde el PC (los datos aparecen en esa pantalla del reloj):
+
+```bash
+adb pair IP_DEL_RELOJ:PUERTO_DE_EMPAREJAMIENTO
+```
+
+```bash
+adb connect IP_DEL_RELOJ:PUERTO
+```
+
+3. Instala **ambas** apps (misma llave de debug) y abre la del reloj:
+
+```bash
+./gradlew :app:installDebug :wear:installDebug
+```
+
+4. En el teléfono, la tarjeta **Reloj** debe decir "Reloj conectado". Usa *Probar reloj (simulado)*:
+   *Precaución* → vibración corta; *Alerta* → vibración larga y pantalla "¿Estás bien?".
+5. Pulsa **SOS** en el reloj → cuenta regresiva → el teléfono envía los SMS y el reloj muestra el resultado.
 
 ## Problemas comunes
 
