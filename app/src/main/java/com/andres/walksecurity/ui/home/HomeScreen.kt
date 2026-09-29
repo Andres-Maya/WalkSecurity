@@ -3,6 +3,7 @@ package com.andres.walksecurity.ui.home
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +26,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,7 +52,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.andres.walksecurity.BuildConfig
 import com.andres.walksecurity.core.model.GeoPoint
+import com.andres.walksecurity.shared.RiskLevel
+import com.andres.walksecurity.ui.theme.AlertRed
+import com.andres.walksecurity.ui.theme.CautionAmber
+import com.andres.walksecurity.ui.theme.SafeGreen
 import com.andres.walksecurity.ui.theme.SosRed
 import com.andres.walksecurity.ui.theme.SosRedDark
 import java.util.Locale
@@ -72,6 +80,10 @@ fun HomeScreen(
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
+    ) { viewModel.refreshPermissions() }
+    // Android 11+ abre directamente Ajustes para elegir "Permitir todo el tiempo"
+    val backgroundLocationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
     ) { viewModel.refreshPermissions() }
 
     // Pedir permisos solo una vez automáticamente; después el usuario usa el botón del aviso
@@ -123,6 +135,11 @@ fun HomeScreen(
                 PermissionWarnings(
                     permissions = state.permissions,
                     onRequest = { permissionLauncher.launch(REQUIRED_PERMISSIONS) },
+                    onRequestBackground = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                        }
+                    },
                     onOpenSettings = {
                         context.startActivity(
                             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -136,6 +153,7 @@ fun HomeScreen(
                     contactsCount = state.contactsCount,
                     onOpenContacts = onOpenContacts,
                 )
+                WatchCard(watch = state.watch, onSimulate = viewModel::simulateRisk)
                 SosButton(onClick = viewModel::onSosPressed)
             }
         }
@@ -156,9 +174,13 @@ fun HomeScreen(
 private fun PermissionWarnings(
     permissions: PermissionsState,
     onRequest: () -> Unit,
+    onRequestBackground: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    if (permissions.location && permissions.sms) return
+    if (permissions.location && permissions.sms) {
+        if (!permissions.backgroundLocation) BackgroundLocationHint(onRequestBackground)
+        return
+    }
     val missing = buildList {
         if (!permissions.location) add("ubicación")
         if (!permissions.sms) add("SMS")
@@ -179,6 +201,62 @@ private fun PermissionWarnings(
             }
         }
     }
+}
+
+@Composable
+private fun BackgroundLocationHint(onRequest: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Para que el SOS del reloj incluya tu ubicación con el teléfono bloqueado, " +
+                    "permite la ubicación \"Todo el tiempo\".",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onRequest) { Text("Permitir") }
+        }
+    }
+}
+
+@Composable
+private fun WatchCard(watch: WatchUi, onSimulate: (RiskLevel) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+            Text(
+                when (watch.connected) {
+                    true -> "Reloj conectado"
+                    false -> "Reloj no conectado"
+                    null -> "Buscando reloj…"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (BuildConfig.DEBUG) {
+                Text(
+                    "Probar reloj (simulado):",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SimulateChip("Seguro", SafeGreen, watch.simulatedLevel == RiskLevel.SAFE) { onSimulate(RiskLevel.SAFE) }
+                    SimulateChip("Precaución", CautionAmber, watch.simulatedLevel == RiskLevel.CAUTION) { onSimulate(RiskLevel.CAUTION) }
+                    SimulateChip("Alerta", AlertRed, watch.simulatedLevel == RiskLevel.ALERT) { onSimulate(RiskLevel.ALERT) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SimulateChip(label: String, color: Color, selected: Boolean, onClick: () -> Unit) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = color,
+            selectedLabelColor = Color.White,
+        ),
+    )
 }
 
 @Composable

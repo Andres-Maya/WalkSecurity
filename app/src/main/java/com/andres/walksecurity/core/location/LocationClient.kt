@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import com.andres.walksecurity.core.model.GeoPoint
@@ -28,6 +29,11 @@ class LocationClient(private val context: Context) {
     fun hasPermission(): Boolean =
         isGranted(Manifest.permission.ACCESS_FINE_LOCATION) ||
             isGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
+
+    /** Android 10+: necesario para obtener la ubicación con la app en segundo plano (SOS desde el reloj). */
+    fun hasBackgroundPermission(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+            isGranted(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
 
     /** Ubicación fresca de alta precisión; si tarda demasiado usa la última conocida. */
     @SuppressLint("MissingPermission")

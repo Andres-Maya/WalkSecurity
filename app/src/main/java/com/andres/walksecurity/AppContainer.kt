@@ -8,6 +8,7 @@ import com.andres.walksecurity.data.remote.ApiClient
 import com.andres.walksecurity.data.repository.AlertRepository
 import com.andres.walksecurity.data.repository.AuthRepository
 import com.andres.walksecurity.data.repository.ContactsRepository
+import com.andres.walksecurity.wear.WatchBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,6 +20,7 @@ class AppContainer(context: Context) {
     val sessionStore = SessionStore(context)
     val locationClient = LocationClient(context)
     val smsSender = SmsSender(context)
+    val watchBridge = WatchBridge(context)
 
     private val api = ApiClient.create(BuildConfig.API_BASE_URL, sessionStore)
 

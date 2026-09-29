@@ -33,6 +33,14 @@ class SosMessageBuilderTest {
     }
 
     @Test
+    fun `indica cuando el SOS viene del reloj y sigue cabiendo en dos SMS`() {
+        val location = GeoPoint(4.711, -74.0721, 12.7f, time)
+        val message = SosMessageBuilder.build("Andres Camilo Perez Gomez", location, time, bogota, fromWatch = true)
+        assertTrue(message.contains("necesita ayuda (desde su reloj)."))
+        assertTrue("Longitud ${message.length}", message.length <= 306)
+    }
+
+    @Test
     fun `usa punto decimal sin importar el idioma del telefono`() {
         val url = SosMessageBuilder.mapsUrl(GeoPoint(-4.5, 10.25, null, 0))
         assertEquals("https://maps.google.com/?q=-4.500000,10.250000", url)

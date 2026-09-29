@@ -13,6 +13,9 @@ import com.andres.walksecurity.core.sms.SmsSender
 import com.andres.walksecurity.data.repository.AlertRepository
 import com.andres.walksecurity.data.repository.AuthRepository
 import com.andres.walksecurity.data.repository.ContactsRepository
+import com.andres.walksecurity.shared.RiskLevel
+import com.andres.walksecurity.shared.RiskStatus
+import com.andres.walksecurity.wear.WatchBridge
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,6 +29,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface SosState {
@@ -36,13 +40,25 @@ sealed interface SosState {
     data class Sent(val result: SosResult) : SosState
 }
 
-data class PermissionsState(val location: Boolean = false, val sms: Boolean = false)
+data class PermissionsState(
+    val location: Boolean = false,
+    val backgroundLocation: Boolean = false,
+    val sms: Boolean = false,
+)
+
+data class WatchUi(
+    /** null mientras se consulta. */
+    val connected: Boolean? = null,
+    /** Último estado enviado con el simulador (solo builds debug). */
+    val simulatedLevel: RiskLevel? = null,
+)
 
 data class HomeUiState(
     val user: User? = null,
     val permissions: PermissionsState = PermissionsState(),
     val contactsCount: Int = 0,
     val sos: SosState = SosState.Idle,
+    val watch: WatchUi = WatchUi(),
 )
 
 class HomeViewModel(
@@ -51,10 +67,12 @@ class HomeViewModel(
     private val alertRepository: AlertRepository,
     private val locationClient: LocationClient,
     private val smsSender: SmsSender,
+    private val watchBridge: WatchBridge,
 ) : ViewModel() {
 
     private val permissions = MutableStateFlow(PermissionsState())
     private val sos = MutableStateFlow<SosState>(SosState.Idle)
+    private val watch = MutableStateFlow(WatchUi())
     private var countdownJob: Job? = null
 
     val uiState: StateFlow<HomeUiState> = combine(
@@ -62,8 +80,9 @@ class HomeViewModel(
         permissions,
         contactsRepository.contacts.map { it.size },
         sos,
-    ) { user, perms, contactsCount, sosState ->
-        HomeUiState(user, perms, contactsCount, sosState)
+        watch,
+    ) { user, perms, contactsCount, sosState, watchUi ->
+        HomeUiState(user, perms, contactsCount, sosState, watchUi)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     /** El GPS solo está activo mientras la pantalla es visible (ahorro de batería). */
@@ -79,11 +98,41 @@ class HomeViewModel(
         viewModelScope.launch { contactsRepository.refresh() }
     }
 
+    /** Se llama al entrar y al volver a la pantalla (p. ej. desde Ajustes). */
     fun refreshPermissions() {
         permissions.value = PermissionsState(
             location = locationClient.hasPermission(),
+            backgroundLocation = locationClient.hasBackgroundPermission(),
             sms = smsSender.hasPermission(),
         )
+        viewModelScope.launch {
+            val connected = watchBridge.isWatchConnected()
+            watch.update { it.copy(connected = connected) }
+        }
+    }
+
+    /**
+     * Simulador para probar el reloj antes de la fase 2 (zonas de riesgo reales).
+     * Publica el estado en el Data Layer exactamente como lo hará el geofencing.
+     */
+    fun simulateRisk(level: RiskLevel) {
+        viewModelScope.launch {
+            val score = when (level) {
+                RiskLevel.SAFE -> 0.1f
+                RiskLevel.CAUTION -> 0.5f
+                RiskLevel.ALERT -> 0.85f
+            }
+            val published = watchBridge.publishRiskStatus(
+                RiskStatus(
+                    level = level,
+                    zoneName = if (level == RiskLevel.SAFE) null else "Zona de prueba",
+                    score = score,
+                    updatedAt = System.currentTimeMillis(),
+                    simulated = true,
+                )
+            )
+            watch.update { it.copy(simulatedLevel = level.takeIf { published }) }
+        }
     }
 
     fun onSosPressed() {
@@ -129,7 +178,7 @@ class HomeViewModel(
         val Factory = viewModelFactory {
             initializer {
                 with(appContainer) {
-                    HomeViewModel(authRepository, contactsRepository, alertRepository, locationClient, smsSender)
+                    HomeViewModel(authRepository, contactsRepository, alertRepository, locationClient, smsSender, watchBridge)
                 }
             }
         }

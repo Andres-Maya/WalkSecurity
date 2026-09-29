@@ -16,6 +16,7 @@ object SosMessageBuilder {
         location: GeoPoint?,
         timeMillis: Long,
         timeZone: TimeZone = TimeZone.getDefault(),
+        fromWatch: Boolean = false,
     ): String {
         val who = userName?.takeIf { it.isNotBlank() } ?: "Un contacto"
         val time = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US)
@@ -27,7 +28,8 @@ object SosMessageBuilder {
         } else {
             "Ubicacion no disponible en este momento."
         }
-        return "ALERTA SOS: $who necesita ayuda. $where Hora: $time. Enviado por WalkSecurity."
+        val via = if (fromWatch) " (desde su reloj)" else ""
+        return "ALERTA SOS: $who necesita ayuda$via. $where Hora: $time. Enviado por WalkSecurity."
     }
 
     fun mapsUrl(location: GeoPoint): String =

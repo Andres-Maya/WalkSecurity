@@ -24,14 +24,18 @@ class AlertRepository(
     private val appScope: CoroutineScope,
 ) {
 
-    suspend fun sendSos(lastKnownLocation: GeoPoint?): SosResult =
-        appScope.async { doSendSos(lastKnownLocation) }.await()
+    /**
+     * @param lastKnownLocation respaldo si el GPS del teléfono no responde (p. ej. la ubicación del reloj).
+     * @param fromWatch el SOS se activó desde el reloj (se indica en el mensaje).
+     */
+    suspend fun sendSos(lastKnownLocation: GeoPoint?, fromWatch: Boolean = false): SosResult =
+        appScope.async { doSendSos(lastKnownLocation, fromWatch) }.await()
 
-    private suspend fun doSendSos(lastKnownLocation: GeoPoint?): SosResult {
+    private suspend fun doSendSos(lastKnownLocation: GeoPoint?, fromWatch: Boolean): SosResult {
         val location = locationClient.currentLocation(timeoutMs = 8_000) ?: lastKnownLocation
         val user = sessionStore.currentUser()
         val contacts = sessionStore.contacts.first()
-        val message = SosMessageBuilder.build(user?.name, location, System.currentTimeMillis())
+        val message = SosMessageBuilder.build(user?.name, location, System.currentTimeMillis(), fromWatch = fromWatch)
 
         // 1) SMS primero: es el canal que funciona sin internet
         val smsSent = withContext(Dispatchers.IO) {
