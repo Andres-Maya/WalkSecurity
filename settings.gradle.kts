@@ -24,3 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "WalkSecurity"
 include(":app")
+include(":shared")
+include(":wear")
