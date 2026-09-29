@@ -17,6 +17,7 @@ import com.andres.walksecurity.ui.auth.LoginScreen
 import com.andres.walksecurity.ui.auth.RegisterScreen
 import com.andres.walksecurity.ui.contacts.ContactsScreen
 import com.andres.walksecurity.ui.home.HomeScreen
+import com.andres.walksecurity.ui.watch.WatchEmulatorScreen
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 
@@ -24,6 +25,7 @@ import kotlinx.serialization.Serializable
 @Serializable internal data object RegisterRoute
 @Serializable internal data object HomeRoute
 @Serializable internal data object ContactsRoute
+@Serializable internal data object WatchRoute
 
 private sealed interface RootState {
     data object Loading : RootState
@@ -69,10 +71,16 @@ private fun MainGraph() {
     val navController = rememberNavController()
     NavHost(navController, startDestination = HomeRoute) {
         composable<HomeRoute> {
-            HomeScreen(onOpenContacts = { navController.navigate(ContactsRoute) { launchSingleTop = true } })
+            HomeScreen(
+                onOpenContacts = { navController.navigate(ContactsRoute) { launchSingleTop = true } },
+                onOpenWatch = { navController.navigate(WatchRoute) { launchSingleTop = true } },
+            )
         }
         composable<ContactsRoute> {
             ContactsScreen(onBack = { navController.popBackStack() })
+        }
+        composable<WatchRoute> {
+            WatchEmulatorScreen(onBack = { navController.popBackStack() })
         }
     }
 }

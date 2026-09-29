@@ -13,8 +13,6 @@ import com.andres.walksecurity.core.sms.SmsSender
 import com.andres.walksecurity.data.repository.AlertRepository
 import com.andres.walksecurity.data.repository.AuthRepository
 import com.andres.walksecurity.data.repository.ContactsRepository
-import com.andres.walksecurity.shared.RiskLevel
-import com.andres.walksecurity.shared.RiskStatus
 import com.andres.walksecurity.wear.WatchBridge
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -47,10 +45,8 @@ data class PermissionsState(
 )
 
 data class WatchUi(
-    /** null mientras se consulta. */
+    /** Reloj Wear OS real conectado; null mientras se consulta. */
     val connected: Boolean? = null,
-    /** Último estado enviado con el simulador (solo builds debug). */
-    val simulatedLevel: RiskLevel? = null,
 )
 
 data class HomeUiState(
@@ -108,30 +104,6 @@ class HomeViewModel(
         viewModelScope.launch {
             val connected = watchBridge.isWatchConnected()
             watch.update { it.copy(connected = connected) }
-        }
-    }
-
-    /**
-     * Simulador para probar el reloj antes de la fase 2 (zonas de riesgo reales).
-     * Publica el estado en el Data Layer exactamente como lo hará el geofencing.
-     */
-    fun simulateRisk(level: RiskLevel) {
-        viewModelScope.launch {
-            val score = when (level) {
-                RiskLevel.SAFE -> 0.1f
-                RiskLevel.CAUTION -> 0.5f
-                RiskLevel.ALERT -> 0.85f
-            }
-            val published = watchBridge.publishRiskStatus(
-                RiskStatus(
-                    level = level,
-                    zoneName = if (level == RiskLevel.SAFE) null else "Zona de prueba",
-                    score = score,
-                    updatedAt = System.currentTimeMillis(),
-                    simulated = true,
-                )
-            )
-            watch.update { it.copy(simulatedLevel = level.takeIf { published }) }
         }
     }
 

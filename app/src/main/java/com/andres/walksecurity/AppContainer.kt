@@ -8,13 +8,17 @@ import com.andres.walksecurity.data.remote.ApiClient
 import com.andres.walksecurity.data.repository.AlertRepository
 import com.andres.walksecurity.data.repository.AuthRepository
 import com.andres.walksecurity.data.repository.ContactsRepository
+import com.andres.walksecurity.data.repository.RiskStatusRepository
+import com.andres.walksecurity.watch.VibratorHaptics
+import com.andres.walksecurity.watch.WatchController
+import com.andres.walksecurity.wear.EmulatedWatchTransport
 import com.andres.walksecurity.wear.WatchBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 /** Inyección de dependencias manual: suficiente para el tamaño actual del proyecto. */
-class AppContainer(context: Context) {
+class AppContainer(private val context: Context) {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     val sessionStore = SessionStore(context)
@@ -27,4 +31,18 @@ class AppContainer(context: Context) {
     val authRepository = AuthRepository(api, sessionStore)
     val contactsRepository = ContactsRepository(api, sessionStore)
     val alertRepository = AlertRepository(api, sessionStore, locationClient, smsSender, appScope)
+    val riskStatusRepository = RiskStatusRepository(watchBridge)
+
+    /**
+     * Reloj emulado en el teléfono. Vive en el scope de la app para que "vibre en la muñeca"
+     * aunque el usuario no tenga abierta la pantalla del reloj. Se crea al usarlo por primera vez.
+     */
+    val emulatedWatch: WatchController by lazy {
+        WatchController(
+            transport = EmulatedWatchTransport(riskStatusRepository, alertRepository, appScope),
+            haptics = VibratorHaptics(context),
+            scope = appScope,
+            vibrateOnEscalation = true,
+        )
+    }
 }

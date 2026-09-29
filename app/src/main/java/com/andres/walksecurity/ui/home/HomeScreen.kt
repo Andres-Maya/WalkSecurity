@@ -26,8 +26,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,12 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.andres.walksecurity.BuildConfig
 import com.andres.walksecurity.core.model.GeoPoint
-import com.andres.walksecurity.shared.RiskLevel
-import com.andres.walksecurity.ui.theme.AlertRed
-import com.andres.walksecurity.ui.theme.CautionAmber
-import com.andres.walksecurity.ui.theme.SafeGreen
 import com.andres.walksecurity.ui.theme.SosRed
 import com.andres.walksecurity.ui.theme.SosRedDark
 import java.util.Locale
@@ -72,6 +65,7 @@ private val REQUIRED_PERMISSIONS = arrayOf(
 @Composable
 fun HomeScreen(
     onOpenContacts: () -> Unit,
+    onOpenWatch: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val context = LocalContext.current
@@ -153,7 +147,7 @@ fun HomeScreen(
                     contactsCount = state.contactsCount,
                     onOpenContacts = onOpenContacts,
                 )
-                WatchCard(watch = state.watch, onSimulate = viewModel::simulateRisk)
+                WatchCard(watch = state.watch, onOpenWatch = onOpenWatch)
                 SosButton(onClick = viewModel::onSosPressed)
             }
         }
@@ -219,44 +213,24 @@ private fun BackgroundLocationHint(onRequest: () -> Unit) {
 }
 
 @Composable
-private fun WatchCard(watch: WatchUi, onSimulate: (RiskLevel) -> Unit) {
+private fun WatchCard(watch: WatchUi, onOpenWatch: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+        Row(
+            Modifier.padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 when (watch.connected) {
-                    true -> "Reloj conectado"
-                    false -> "Reloj no conectado"
+                    true -> "Reloj Wear OS conectado"
+                    false -> "Sin reloj: usa el reloj emulado"
                     null -> "Buscando reloj…"
                 },
                 style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
             )
-            if (BuildConfig.DEBUG) {
-                Text(
-                    "Probar reloj (simulado):",
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SimulateChip("Seguro", SafeGreen, watch.simulatedLevel == RiskLevel.SAFE) { onSimulate(RiskLevel.SAFE) }
-                    SimulateChip("Precaución", CautionAmber, watch.simulatedLevel == RiskLevel.CAUTION) { onSimulate(RiskLevel.CAUTION) }
-                    SimulateChip("Alerta", AlertRed, watch.simulatedLevel == RiskLevel.ALERT) { onSimulate(RiskLevel.ALERT) }
-                }
-            }
+            TextButton(onClick = onOpenWatch) { Text(if (watch.connected == true) "Reloj" else "Reloj emulado") }
         }
     }
-}
-
-@Composable
-private fun SimulateChip(label: String, color: Color, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = color,
-            selectedLabelColor = Color.White,
-        ),
-    )
 }
 
 @Composable
