@@ -1,0 +1,60 @@
+package com.andres.walksecurity.data.remote
+
+import com.andres.walksecurity.core.model.TrustedContact
+import com.andres.walksecurity.core.model.User
+import kotlinx.serialization.Serializable
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+
+/** Contrato con el backend Spring Boot (ver backend/README.md). */
+interface ApiService {
+
+    @POST("api/auth/register")
+    suspend fun register(@Body body: RegisterRequest): AuthResponse
+
+    @POST("api/auth/login")
+    suspend fun login(@Body body: LoginRequest): AuthResponse
+
+    @GET("api/contacts")
+    suspend fun contacts(): List<TrustedContact>
+
+    @POST("api/contacts")
+    suspend fun addContact(@Body body: ContactRequest): TrustedContact
+
+    @DELETE("api/contacts/{id}")
+    suspend fun deleteContact(@Path("id") id: Long): Response<Unit>
+
+    @POST("api/alerts")
+    suspend fun createAlert(@Body body: AlertRequest): AlertResponse
+}
+
+@Serializable
+data class RegisterRequest(val name: String, val email: String, val phone: String, val password: String)
+
+@Serializable
+data class LoginRequest(val email: String, val password: String)
+
+@Serializable
+data class AuthResponse(val token: String, val user: User)
+
+@Serializable
+data class ContactRequest(val name: String, val phone: String, val relationship: String? = null)
+
+@Serializable
+data class AlertRequest(
+    val type: String,
+    val latitude: Double?,
+    val longitude: Double?,
+    val accuracyMeters: Float?,
+    val message: String,
+)
+
+@Serializable
+data class AlertResponse(val id: Long, val type: String, val status: String, val createdAt: String)
+
+@Serializable
+data class ErrorResponse(val message: String? = null)
