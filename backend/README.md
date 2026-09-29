@@ -3,7 +3,7 @@
 Spring Boot 4 · Java 21 · PostgreSQL 17 · Flyway · JWT (HS256)
 
 ```bash
-docker compose up -d     # PostgreSQL en localhost:5432
+docker compose up -d     # PostgreSQL en localhost:5433
 ./gradlew bootRun        # API en http://localhost:8080
 ```
 
@@ -11,7 +11,7 @@ Variables de entorno (todas tienen valor por defecto para desarrollo):
 
 | Variable      | Por defecto                                        |
 |---------------|----------------------------------------------------|
-| `DB_URL`      | `jdbc:postgresql://localhost:5432/walksecurity`    |
+| `DB_URL`      | `jdbc:postgresql://localhost:5433/walksecurity`    |
 | `DB_USER`     | `walksecurity`                                     |
 | `DB_PASSWORD` | `walksecurity`                                     |
 | `JWT_SECRET`  | secreto de desarrollo — **cámbialo en producción** |

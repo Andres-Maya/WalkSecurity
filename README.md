@@ -118,6 +118,14 @@ Desde Android Studio (▶ Run con el teléfono seleccionado) o:
 
 > Los SMS los cobra tu operador según tu plan.
 
+## Problemas comunes
+
+| Síntoma | Causa / solución |
+|---------|------------------|
+| "No se pudo conectar con el servidor" | 1) `adb devices` no muestra el teléfono → reconecta el cable y acepta la depuración USB. 2) Falta `adb reverse tcp:8080 tcp:8080` (se pierde al desconectar). 3) El backend no está corriendo (`curl localhost:8080/actuator/health`). En builds debug el mensaje muestra la URL usada. |
+| Docker Desktop se cierra al iniciar con `...dockerInference` o `engine.sock: The file cannot be accessed by the system` | Sockets huérfanos de una sesión anterior. Con Docker cerrado, renombra `%LOCALAPPDATA%\Docker\run` y `%LOCALAPPDATA%\docker-secrets-engine` y vuelve a abrir Docker. |
+| `la autentificación password falló para el usuario "walksecurity"` | Un PostgreSQL instalado en Windows ocupa el 5432. El contenedor usa el **5433** para evitarlo. |
+
 ## Tests
 
 ```bash

@@ -1,5 +1,6 @@
 package com.andres.walksecurity.data.remote
 
+import com.andres.walksecurity.BuildConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
@@ -16,10 +17,16 @@ suspend fun <T> apiCall(block: suspend () -> T): Result<T> =
     } catch (e: HttpException) {
         Result.failure(ApiException(e.code(), e.serverMessage() ?: defaultMessage(e.code())))
     } catch (e: IOException) {
-        Result.failure(ApiException(null, "No se pudo conectar con el servidor. Verifica tu conexión."))
+        Result.failure(ApiException(null, connectionErrorMessage()))
     } catch (e: SerializationException) {
         Result.failure(ApiException(null, "Respuesta inesperada del servidor."))
     }
+
+// En debug se muestra la URL para diagnosticar rápido (cable/adb reverse o backend apagado)
+private fun connectionErrorMessage(): String {
+    val base = "No se pudo conectar con el servidor. Verifica tu conexión."
+    return if (BuildConfig.DEBUG) "$base\n[debug] ${BuildConfig.API_BASE_URL}" else base
+}
 
 private fun HttpException.serverMessage(): String? =
     runCatching {

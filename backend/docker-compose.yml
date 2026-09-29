@@ -8,7 +8,8 @@ services:
       POSTGRES_USER: walksecurity
       POSTGRES_PASSWORD: walksecurity
     ports:
-      - "5432:5432"
+      # 5433 en el host: evita choque con un PostgreSQL instalado en Windows (5432)
+      - "5433:5432"
     volumes:
       - walksecurity-data:/var/lib/postgresql/data
     healthcheck:

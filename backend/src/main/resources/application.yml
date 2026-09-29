@@ -2,7 +2,7 @@ spring:
   application:
     name: walksecurity-api
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/walksecurity}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/walksecurity}
     username: ${DB_USER:walksecurity}
     password: ${DB_PASSWORD:walksecurity}
   jpa:
