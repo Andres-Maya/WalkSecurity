@@ -1,0 +1,20 @@
+# Base de datos local para desarrollo: `docker compose up -d`
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: walksecurity-db
+    environment:
+      POSTGRES_DB: walksecurity
+      POSTGRES_USER: walksecurity
+      POSTGRES_PASSWORD: walksecurity
+    ports:
+      - "5432:5432"
+    volumes:
+      - walksecurity-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U walksecurity -d walksecurity"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  walksecurity-data:

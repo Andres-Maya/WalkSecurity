@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: walksecurity-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/walksecurity}
+    username: ${DB_USER:walksecurity}
+    password: ${DB_PASSWORD:walksecurity}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # Flyway es el dueño del esquema
+  flyway:
+    enabled: true
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+walksecurity:
+  jwt:
+    # En producción: variable de entorno JWT_SECRET con al menos 32 caracteres aleatorios
+    secret: ${JWT_SECRET:solo-para-desarrollo-cambiar-en-produccion-0123456789}
+    expiration-days: 7
+  contacts:
+    max-per-user: 10
