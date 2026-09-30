@@ -112,8 +112,11 @@ private fun SosResultDialog(result: SosResult, onDismiss: () -> Unit) {
                     }
                 )
                 Text(
-                    if (result.serverRegistered) "Alerta registrada en el servidor."
-                    else "El servidor no respondió; la alerta no quedó registrada."
+                    when {
+                        result.localMode -> "Modo local: la alerta no se registra en el servidor."
+                        result.serverRegistered -> "Alerta registrada en el servidor."
+                        else -> "El servidor no respondió; la alerta no quedó registrada."
+                    }
                 )
                 Text(
                     result.location?.let { "Ubicación: ${SosMessageBuilder.mapsUrl(it)}" }

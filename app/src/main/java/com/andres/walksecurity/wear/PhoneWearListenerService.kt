@@ -6,6 +6,7 @@ import com.andres.walksecurity.core.model.GeoPoint
 import com.andres.walksecurity.shared.SosOutcome
 import com.andres.walksecurity.shared.SosRequest
 import com.andres.walksecurity.shared.WearProtocol
+import com.andres.walksecurity.shared.fromBytes
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import kotlinx.coroutines.runBlocking

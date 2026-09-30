@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -106,8 +105,8 @@ fun ContactsScreen(
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
-                    items(state.contacts, key = { it.id }) { contact ->
-                        ContactRow(contact, onDelete = { pendingDelete = contact })
+                    items(state.contacts, key = { it.localId }) { contact ->
+                        ContactRow(contact, isLocal = state.isLocal, onDelete = { pendingDelete = contact })
                     }
                 }
             }
@@ -116,7 +115,6 @@ fun ContactsScreen(
 
     if (state.showAddDialog) {
         AddContactDialog(
-            saving = state.saving,
             error = state.formError,
             onSave = viewModel::add,
             onDismiss = viewModel::closeAddDialog,
@@ -156,7 +154,7 @@ private fun EmptyContacts() {
 }
 
 @Composable
-private fun ContactRow(contact: TrustedContact, onDelete: () -> Unit) {
+private fun ContactRow(contact: TrustedContact, isLocal: Boolean, onDelete: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
@@ -168,6 +166,13 @@ private fun ContactRow(contact: TrustedContact, onDelete: () -> Unit) {
                     listOfNotNull(contact.phone, contact.relationship).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                if (contact.serverId == null) {
+                    Text(
+                        if (isLocal) "Guardado en este teléfono" else "Pendiente de sincronizar",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Filled.Delete, contentDescription = "Eliminar ${contact.name}")
@@ -178,7 +183,6 @@ private fun ContactRow(contact: TrustedContact, onDelete: () -> Unit) {
 
 @Composable
 private fun AddContactDialog(
-    saving: Boolean,
     error: String?,
     onSave: (name: String, phone: String, relationship: String) -> Unit,
     onDismiss: () -> Unit,
@@ -188,15 +192,15 @@ private fun AddContactDialog(
     var relationship by rememberSaveable { mutableStateOf("") }
 
     AlertDialog(
-        onDismissRequest = { if (!saving) onDismiss() },
+        onDismissRequest = onDismiss,
         title = { Text("Nuevo contacto") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FormTextField(name, { name = it }, "Nombre", enabled = !saving)
-                FormTextField(phone, { phone = it }, "Teléfono (+57…)", keyboardType = KeyboardType.Phone, enabled = !saving)
+                FormTextField(name, { name = it }, "Nombre")
+                FormTextField(phone, { phone = it }, "Teléfono (+57…)", keyboardType = KeyboardType.Phone)
                 FormTextField(
                     relationship, { relationship = it }, "Parentesco (opcional)",
-                    imeAction = ImeAction.Done, enabled = !saving,
+                    imeAction = ImeAction.Done,
                 )
                 if (error != null) {
                     Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -204,10 +208,8 @@ private fun AddContactDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(name, phone, relationship) }, enabled = !saving) {
-                if (saving) CircularProgressIndicator(Modifier.padding(2.dp), strokeWidth = 2.dp) else Text("Guardar")
-            }
+            Button(onClick = { onSave(name, phone, relationship) }) { Text("Guardar") }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !saving) { Text("Cancelar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
     )
 }

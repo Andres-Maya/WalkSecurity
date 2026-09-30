@@ -43,7 +43,10 @@ object ApiClient {
     }
 }
 
-/** Adjunta el JWT y cierra la sesión local si el servidor lo rechaza. */
+/**
+ * Adjunta el JWT. Si el servidor lo rechaza (expirado), se pasa a modo local
+ * conservando los contactos de emergencia; la app pedirá volver a iniciar sesión.
+ */
 private class AuthInterceptor(private val sessionStore: SessionStore) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
@@ -58,7 +61,7 @@ private class AuthInterceptor(private val sessionStore: SessionStore) : Intercep
         }
         val response = chain.proceed(authorized)
         if (response.code == 401 && token != null) {
-            runBlocking { sessionStore.clear() }
+            runBlocking { sessionStore.clearToken() }
         }
         return response
     }

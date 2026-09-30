@@ -28,8 +28,8 @@ class AppContainer(private val context: Context) {
 
     private val api = ApiClient.create(BuildConfig.API_BASE_URL, sessionStore)
 
-    val authRepository = AuthRepository(api, sessionStore)
-    val contactsRepository = ContactsRepository(api, sessionStore)
+    val contactsRepository = ContactsRepository(api, sessionStore, appScope)
+    val authRepository = AuthRepository(api, sessionStore, contactsRepository)
     val alertRepository = AlertRepository(api, sessionStore, locationClient, smsSender, appScope)
     val riskStatusRepository = RiskStatusRepository(watchBridge)
 

@@ -51,6 +51,8 @@ data class WatchUi(
 
 data class HomeUiState(
     val user: User? = null,
+    /** Sin cuenta en el servidor (o sesión expirada): los datos viven solo en el teléfono. */
+    val isLocal: Boolean = false,
     val permissions: PermissionsState = PermissionsState(),
     val contactsCount: Int = 0,
     val sos: SosState = SosState.Idle,
@@ -72,13 +74,20 @@ class HomeViewModel(
     private var countdownJob: Job? = null
 
     val uiState: StateFlow<HomeUiState> = combine(
-        authRepository.session.map { it?.user },
+        authRepository.session,
         permissions,
         contactsRepository.contacts.map { it.size },
         sos,
         watch,
-    ) { user, perms, contactsCount, sosState, watchUi ->
-        HomeUiState(user, perms, contactsCount, sosState, watchUi)
+    ) { session, perms, contactsCount, sosState, watchUi ->
+        HomeUiState(
+            user = session?.user,
+            isLocal = session?.isLocal ?: true,
+            permissions = perms,
+            contactsCount = contactsCount,
+            sos = sosState,
+            watch = watchUi,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     /** El GPS solo está activo mientras la pantalla es visible (ahorro de batería). */
@@ -91,7 +100,7 @@ class HomeViewModel(
 
     init {
         refreshPermissions()
-        viewModelScope.launch { contactsRepository.refresh() }
+        contactsRepository.requestSync()
     }
 
     /** Se llama al entrar y al volver a la pantalla (p. ej. desde Ajustes). */

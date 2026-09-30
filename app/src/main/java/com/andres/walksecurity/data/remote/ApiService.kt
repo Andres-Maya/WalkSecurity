@@ -1,6 +1,5 @@
 package com.andres.walksecurity.data.remote
 
-import com.andres.walksecurity.core.model.TrustedContact
 import com.andres.walksecurity.core.model.User
 import kotlinx.serialization.Serializable
 import retrofit2.Response
@@ -20,10 +19,10 @@ interface ApiService {
     suspend fun login(@Body body: LoginRequest): AuthResponse
 
     @GET("api/contacts")
-    suspend fun contacts(): List<TrustedContact>
+    suspend fun contacts(): List<ContactDto>
 
     @POST("api/contacts")
-    suspend fun addContact(@Body body: ContactRequest): TrustedContact
+    suspend fun addContact(@Body body: ContactRequest): ContactDto
 
     @DELETE("api/contacts/{id}")
     suspend fun deleteContact(@Path("id") id: Long): Response<Unit>
@@ -40,6 +39,9 @@ data class LoginRequest(val email: String, val password: String)
 
 @Serializable
 data class AuthResponse(val token: String, val user: User)
+
+@Serializable
+data class ContactDto(val id: Long, val name: String, val phone: String, val relationship: String? = null)
 
 @Serializable
 data class ContactRequest(val name: String, val phone: String, val relationship: String? = null)

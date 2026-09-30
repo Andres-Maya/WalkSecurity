@@ -1,6 +1,7 @@
 package com.andres.walksecurity.data.repository
 
 import com.andres.walksecurity.core.model.Session
+import com.andres.walksecurity.core.model.User
 import com.andres.walksecurity.core.model.Validators
 import com.andres.walksecurity.data.local.SessionStore
 import com.andres.walksecurity.data.remote.ApiService
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 class AuthRepository(
     private val api: ApiService,
     private val sessionStore: SessionStore,
+    private val contactsRepository: ContactsRepository,
 ) {
     val session: Flow<Session?> = sessionStore.session
 
@@ -32,8 +34,21 @@ class AuthRepository(
             )
         }.map { saveSession(it) }
 
+    /**
+     * Modo local: usar la app sin cuenta (p. ej. sin servidor disponible). Todo funciona —contactos,
+     * SOS por SMS, reloj— y los datos se suben al servidor si después se crea la cuenta.
+     */
+    suspend fun startLocalSession(name: String, phone: String) {
+        sessionStore.saveLocalProfile(
+            User(id = 0, name = name.trim(), email = "", phone = Validators.normalizePhone(phone))
+        )
+    }
+
     suspend fun logout() = sessionStore.clear()
 
-    private suspend fun saveSession(response: AuthResponse) =
+    private suspend fun saveSession(response: AuthResponse) {
         sessionStore.saveSession(response.token, response.user)
+        // Sube los contactos creados en modo local y baja los que ya estaban en la cuenta
+        contactsRepository.requestSync()
+    }
 }

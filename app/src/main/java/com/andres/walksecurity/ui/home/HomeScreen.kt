@@ -16,11 +16,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -66,9 +71,12 @@ private val REQUIRED_PERMISSIONS = arrayOf(
 fun HomeScreen(
     onOpenContacts: () -> Unit,
     onOpenWatch: () -> Unit,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val context = LocalContext.current
+    var confirmLogout by rememberSaveable { mutableStateOf(false) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val location by viewModel.location.collectAsStateWithLifecycle()
 
@@ -102,30 +110,44 @@ fun HomeScreen(
                     IconButton(onClick = onOpenContacts) {
                         Icon(Icons.Filled.Person, contentDescription = "Contactos de confianza")
                     }
-                    IconButton(onClick = viewModel::logout) {
+                    IconButton(onClick = { confirmLogout = true }) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar sesión")
                     }
                 },
             )
         },
+        // El SOS va fijo abajo: siempre visible, aunque haya avisos y haya que desplazar el resto
+        bottomBar = {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                SosButton(onClick = viewModel::onSosPressed)
+            }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .verticalScroll(rememberScrollState()),
         ) {
             SafetyMap(
                 location = location,
                 myLocationEnabled = state.permissions.location,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .height(260.dp),
             )
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                if (state.isLocal) LocalModeCard(onLogin = onLogin, onRegister = onRegister)
                 PermissionWarnings(
                     permissions = state.permissions,
                     onRequest = { permissionLauncher.launch(REQUIRED_PERMISSIONS) },
@@ -148,9 +170,31 @@ fun HomeScreen(
                     onOpenContacts = onOpenContacts,
                 )
                 WatchCard(watch = state.watch, onOpenWatch = onOpenWatch)
-                SosButton(onClick = viewModel::onSosPressed)
             }
         }
+    }
+
+    if (confirmLogout) {
+        AlertDialog(
+            onDismissRequest = { confirmLogout = false },
+            title = { Text("Cerrar sesión") },
+            text = {
+                Text(
+                    if (state.isLocal) {
+                        "Estás en modo local: se borrarán de este teléfono tu perfil y tus contactos de emergencia."
+                    } else {
+                        "Se borrarán de este teléfono tu sesión y tus contactos. Volverán al iniciar sesión."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmLogout = false
+                    viewModel.logout()
+                }) { Text("Cerrar sesión") }
+            },
+            dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } },
+        )
     }
 
     SosDialogs(
@@ -208,6 +252,27 @@ private fun BackgroundLocationHint(onRequest: () -> Unit) {
                 modifier = Modifier.weight(1f),
             )
             TextButton(onClick = onRequest) { Text("Permitir") }
+        }
+    }
+}
+
+@Composable
+private fun LocalModeCard(onLogin: () -> Unit, onRegister: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)) {
+            Text(
+                "Modo local: tus contactos se guardan solo en este teléfono. " +
+                    "El SOS por SMS funciona igual.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            Row {
+                TextButton(onClick = onRegister) { Text("Crear cuenta") }
+                TextButton(onClick = onLogin) { Text("Iniciar sesión") }
+            }
         }
     }
 }

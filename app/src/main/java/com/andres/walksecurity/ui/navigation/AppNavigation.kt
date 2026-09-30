@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.andres.walksecurity.core.model.Session
 import com.andres.walksecurity.data.repository.AuthRepository
 import com.andres.walksecurity.ui.auth.LoginScreen
 import com.andres.walksecurity.ui.auth.RegisterScreen
@@ -30,7 +31,8 @@ import kotlinx.serialization.Serializable
 private sealed interface RootState {
     data object Loading : RootState
     data object LoggedOut : RootState
-    data object LoggedIn : RootState
+    /** Con cuenta o en modo local: la app completa está disponible. */
+    data class LoggedIn(val session: Session) : RootState
 }
 
 /**
@@ -40,16 +42,16 @@ private sealed interface RootState {
 @Composable
 fun WalkSecurityRoot(authRepository: AuthRepository) {
     val rootFlow = remember(authRepository) {
-        authRepository.session.map { if (it == null) RootState.LoggedOut else RootState.LoggedIn }
+        authRepository.session.map { session -> if (session == null) RootState.LoggedOut else RootState.LoggedIn(session) }
     }
     val root by rootFlow.collectAsStateWithLifecycle(initialValue = RootState.Loading)
 
-    when (root) {
+    when (val state = root) {
         RootState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         RootState.LoggedOut -> AuthGraph()
-        RootState.LoggedIn -> MainGraph()
+        is RootState.LoggedIn -> MainGraph(state.session)
     }
 }
 
@@ -67,13 +69,32 @@ private fun AuthGraph() {
 }
 
 @Composable
-private fun MainGraph() {
+private fun MainGraph(session: Session) {
     val navController = rememberNavController()
+    val backToHome: () -> Unit = { navController.popBackStack(HomeRoute, inclusive = false) }
     NavHost(navController, startDestination = HomeRoute) {
         composable<HomeRoute> {
             HomeScreen(
                 onOpenContacts = { navController.navigate(ContactsRoute) { launchSingleTop = true } },
                 onOpenWatch = { navController.navigate(WatchRoute) { launchSingleTop = true } },
+                onLogin = { navController.navigate(LoginRoute) { launchSingleTop = true } },
+                onRegister = { navController.navigate(RegisterRoute) { launchSingleTop = true } },
+            )
+        }
+        // Desde el modo local: al iniciar sesión o registrarse se vuelve al inicio y se suben los contactos
+        composable<LoginRoute> {
+            LoginScreen(
+                onGoToRegister = { navController.navigate(RegisterRoute) { launchSingleTop = true } },
+                onSuccess = backToHome,
+                allowLocalMode = false,
+            )
+        }
+        composable<RegisterRoute> {
+            RegisterScreen(
+                onGoToLogin = { navController.navigate(LoginRoute) { launchSingleTop = true } },
+                onSuccess = backToHome,
+                initialName = if (session.isLocal) session.user.name else "",
+                initialPhone = if (session.isLocal) session.user.phone else "",
             )
         }
         composable<ContactsRoute> {
