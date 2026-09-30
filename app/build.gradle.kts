@@ -71,6 +71,8 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.maps.compose)
+    // Mapa sin API key (OpenStreetMap) mientras no se configure MAPS_API_KEY
+    implementation(libs.osmdroid)
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
