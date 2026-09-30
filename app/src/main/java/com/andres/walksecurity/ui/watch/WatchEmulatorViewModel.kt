@@ -9,6 +9,8 @@ import com.andres.walksecurity.data.repository.RiskStatusRepository
 import com.andres.walksecurity.shared.RiskLevel
 import com.andres.walksecurity.shared.RiskStatus
 import com.andres.walksecurity.watch.WatchController
+import com.andres.walksecurity.wear.DesktopLinkState
+import com.andres.walksecurity.wear.DesktopWatchLink
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -19,7 +21,15 @@ class WatchEmulatorViewModel(
     /** Vive en el scope de la app: el ViewModel solo lo expone a la pantalla. */
     val controller: WatchController,
     private val riskStatusRepository: RiskStatusRepository,
+    private val desktopWatchLink: DesktopWatchLink,
 ) : ViewModel() {
+
+    /** Conexión con el reloj emulado del computador. Sigue activa aunque se salga de esta pantalla. */
+    val desktopLink: StateFlow<DesktopLinkState> = desktopWatchLink.state
+
+    fun setDesktopLink(enabled: Boolean) {
+        if (enabled) desktopWatchLink.start() else desktopWatchLink.stop()
+    }
 
     val currentLevel: StateFlow<RiskLevel?> = riskStatusRepository.current
         .map { it?.level }
@@ -50,7 +60,7 @@ class WatchEmulatorViewModel(
     companion object {
         val Factory = viewModelFactory {
             initializer {
-                with(appContainer) { WatchEmulatorViewModel(emulatedWatch, riskStatusRepository) }
+                with(appContainer) { WatchEmulatorViewModel(emulatedWatch, riskStatusRepository, desktopWatchLink) }
             }
         }
     }

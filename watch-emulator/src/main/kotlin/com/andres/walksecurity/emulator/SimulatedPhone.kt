@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
-enum class LogSource(val label: String) { PHONE("Teléfono"), WATCH("Reloj"), USER("Usuario") }
+enum class LogSource(val label: String) { PHONE("Teléfono"), WATCH("Reloj"), USER("Usuario"), PC("Computador") }
 
 data class LogEntry(val time: String, val source: LogSource, val text: String)
 

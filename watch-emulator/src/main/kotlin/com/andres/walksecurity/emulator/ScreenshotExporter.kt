@@ -81,7 +81,7 @@ object ScreenshotExporter {
             sheet(File(dir, "00-todos-los-estados.png"), "Reloj redondo grande (227 dp)", 227.dp),
             sheet(File(dir, "00b-reloj-pequeno.png"), "Reloj redondo pequeño (192 dp)", 192.dp),
         )
-        val app = render(File(dir, "10-emulador.png"), width = 2400, height = 1640) { EmulatorApp() }
+        val app = render(File(dir, "10-emulador.png"), width = 2400, height = 1640) { EmulatorApp(startLink = false) }
         return sheets + singles + app
     }
 

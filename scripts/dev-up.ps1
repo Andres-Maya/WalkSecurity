@@ -87,7 +87,8 @@ Step 'Telefono (adb reverse)'
 $devices = @(adb devices | Select-Object -Skip 1 | Where-Object { $_ -match '\tdevice$' })
 if ($devices.Count -gt 0) {
     adb reverse tcp:8080 tcp:8080 | Out-Null
-    Write-Host '  127.0.0.1:8080 del telefono -> backend del PC.' -ForegroundColor Green
+    adb reverse tcp:8766 tcp:8766 | Out-Null
+    Write-Host '  127.0.0.1:8080 del telefono -> backend del PC; 8766 -> reloj emulado del PC.' -ForegroundColor Green
 } else {
     Write-Host '  No hay telefono conectado. Conectalo y ejecuta: adb reverse tcp:8080 tcp:8080' -ForegroundColor Yellow
     Write-Host '  (La app tambien funciona sin servidor en "modo local".)'

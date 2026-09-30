@@ -16,6 +16,8 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(libs.compose.mp.material3)
     implementation(libs.kotlinx.coroutines.swing)
+
+    testImplementation(libs.junit)
 }
 
 compose.desktop {

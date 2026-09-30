@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.min
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andres.walksecurity.shared.RiskLevel
+import com.andres.walksecurity.wear.DesktopLinkState
 import com.andres.walksecurity.watch.WatchUiState
 import com.andres.walksecurity.watch.ui.WatchActions
 import com.andres.walksecurity.watch.ui.WatchApp
@@ -62,6 +64,7 @@ fun WatchEmulatorScreen(
     val controller = viewModel.controller
     val state by controller.state.collectAsStateWithLifecycle()
     val currentLevel by viewModel.currentLevel.collectAsStateWithLifecycle()
+    val desktopLink by viewModel.desktopLink.collectAsStateWithLifecycle()
     val actions = remember(controller) {
         WatchActions(
             onSos = controller::onSosPressed,
@@ -101,6 +104,7 @@ fun WatchEmulatorScreen(
             )
             WatchFrame(state, actions)
             SimulatorCard(currentLevel, onSimulate = viewModel::simulate)
+            DesktopLinkCard(desktopLink, onToggle = viewModel::setDesktopLink)
         }
     }
 }
@@ -150,6 +154,34 @@ private fun SimulatorCard(currentLevel: RiskLevel?, onSimulate: (RiskLevel) -> U
                 LevelChip("Seguro", SafeGreen, currentLevel == RiskLevel.SAFE) { onSimulate(RiskLevel.SAFE) }
                 LevelChip("Precaución", CautionAmber, currentLevel == RiskLevel.CAUTION) { onSimulate(RiskLevel.CAUTION) }
                 LevelChip("Alerta", AlertRed, currentLevel == RiskLevel.ALERT) { onSimulate(RiskLevel.ALERT) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DesktopLinkCard(state: DesktopLinkState, onToggle: (Boolean) -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Reloj del computador", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Conecta este teléfono con el emulador de reloj del PC por el cable USB.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Switch(checked = state != DesktopLinkState.Off, onCheckedChange = onToggle)
+            }
+            when (state) {
+                DesktopLinkState.Off -> Unit
+                is DesktopLinkState.Searching -> Text(state.hint, style = MaterialTheme.typography.bodySmall)
+                DesktopLinkState.Connected -> Text(
+                    "Conectado. Las zonas que elijas aquí llegan al reloj del PC, y su botón SOS envía SMS " +
+                        "reales desde este teléfono.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         }
     }

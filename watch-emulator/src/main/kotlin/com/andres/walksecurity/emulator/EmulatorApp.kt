@@ -21,11 +21,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,14 +59,17 @@ private val Background = Color(0xFF0F1115)
 private val PanelColor = Color(0xFF171A20)
 private val Muted = Color(0xFF9AA0A6)
 
+/** @param startLink abre el enlace con el teléfono real (false al generar capturas). */
 @Composable
-fun EmulatorApp() {
+fun EmulatorApp(startLink: Boolean = true) {
     val scope = rememberCoroutineScope()
     val log = remember { EventLog() }
     val phone = remember { SimulatedPhone(scope, log) }
+    val realPhone = remember { PhoneLinkServer(scope, log) }
+    val transport = remember { EmulatorTransport(phone, realPhone, scope) }
     val haptics = remember { DesktopHaptics(log) }
-    // El mismo controlador que usa el reloj Wear OS real; aquí el "teléfono" es simulado
-    val controller = remember { WatchController(phone, haptics, scope, vibrateOnEscalation = true) }
+    // El mismo controlador que usa el reloj Wear OS real; el teléfono es el real (USB) o el simulado
+    val controller = remember { WatchController(transport, haptics, scope, vibrateOnEscalation = true) }
     val actions = remember(controller) { loggedActions(controller, log) }
 
     val watchState by controller.state.collectAsState()
@@ -72,6 +77,12 @@ fun EmulatorApp() {
     val contacts by phone.contacts.collectAsState()
     val phoneLevel by phone.phoneLevel.collectAsState()
     val entries by log.entries.collectAsState()
+    val realConnected by realPhone.connected.collectAsState()
+    val linkStatus by realPhone.status.collectAsState()
+
+    LaunchedEffect(Unit) { if (startLink) realPhone.start() }
+    // Al conectar o desconectar el teléfono real, el reloj vuelve a comprobar si lo alcanza
+    LaunchedEffect(realConnected) { controller.refreshPhone() }
     val vibration = rememberVibrationUi(haptics)
     var shape by remember { mutableStateOf(WatchShape.LARGE_ROUND) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
@@ -113,21 +124,28 @@ fun EmulatorApp() {
                     modifier = Modifier.weight(0.9f).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    RealPhoneCard(linkStatus, onPrepareUsb = { scope.launch(Dispatchers.IO) { realPhone.prepareUsb() } })
+
                     PanelCard("Zona actual (la calcula el teléfono)") {
                         Text(
-                            "Mientras llega el geofencing, elige el nivel de riesgo estimado. " +
-                                "Al subir de nivel el reloj vibra; en Alerta pregunta \"¿Estás bien?\".",
+                            if (realConnected) {
+                                "La envía el teléfono real: cámbiala en la app (Reloj → Simular zona)."
+                            } else {
+                                "Mientras llega el geofencing, elige el nivel de riesgo estimado. " +
+                                    "Al subir de nivel el reloj vibra; en Alerta pregunta \"¿Estás bien?\"."
+                            },
                             color = Muted,
                             fontSize = 13.sp,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            LevelChip("Zona segura", SafeGreen, phoneLevel == RiskLevel.SAFE) { phone.publish(RiskLevel.SAFE) }
-                            LevelChip("Precaución", CautionAmber, phoneLevel == RiskLevel.CAUTION) { phone.publish(RiskLevel.CAUTION) }
-                            LevelChip("Alerta", AlertRed, phoneLevel == RiskLevel.ALERT) { phone.publish(RiskLevel.ALERT) }
+                            val enabled = !realConnected
+                            LevelChip("Zona segura", SafeGreen, phoneLevel == RiskLevel.SAFE, enabled) { phone.publish(RiskLevel.SAFE) }
+                            LevelChip("Precaución", CautionAmber, phoneLevel == RiskLevel.CAUTION, enabled) { phone.publish(RiskLevel.CAUTION) }
+                            LevelChip("Alerta", AlertRed, phoneLevel == RiskLevel.ALERT, enabled) { phone.publish(RiskLevel.ALERT) }
                         }
                     }
 
-                    PanelCard("Teléfono") {
+                    PanelCard(if (realConnected) "Teléfono simulado (inactivo)" else "Teléfono simulado") {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(if (connected) "Reloj conectado al teléfono" else "Reloj desconectado", color = Color.White)
@@ -139,6 +157,7 @@ fun EmulatorApp() {
                             }
                             Switch(
                                 checked = connected,
+                                enabled = !realConnected,
                                 onCheckedChange = {
                                     phone.setConnected(it)
                                     controller.refreshPhone()
@@ -150,6 +169,7 @@ fun EmulatorApp() {
                             (0..3).forEach { count ->
                                 FilterChip(
                                     selected = contacts == count,
+                                    enabled = !realConnected,
                                     onClick = { phone.setContacts(count) },
                                     label = { Text("$count") },
                                 )
@@ -240,9 +260,40 @@ private fun PanelCard(title: String, modifier: Modifier = Modifier, content: @Co
 }
 
 @Composable
-private fun LevelChip(label: String, color: Color, selected: Boolean, onClick: () -> Unit) {
+private fun RealPhoneCard(status: PhoneLinkStatus, onPrepareUsb: () -> Unit) {
+    PanelCard("Teléfono real (USB)") {
+        when (status) {
+            is PhoneLinkStatus.Connected -> {
+                Text(
+                    "Conectado: ${status.device}${status.userName?.let { " · $it" }.orEmpty()}",
+                    color = Color(0xFF81C995),
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "Atención: el SOS de este reloj envía SMS REALES desde el teléfono a sus contactos.",
+                    color = Color(0xFFFFB74D),
+                    fontSize = 13.sp,
+                )
+            }
+            PhoneLinkStatus.Starting, PhoneLinkStatus.Waiting -> {
+                Text(
+                    "Esperando al teléfono. Con el cable USB conectado, en la app abre Reloj y activa " +
+                        "\"Reloj del computador\". Mientras tanto se usa el teléfono simulado.",
+                    color = Muted,
+                    fontSize = 13.sp,
+                )
+                OutlinedButton(onClick = onPrepareUsb) { Text("Preparar USB de nuevo (adb reverse)") }
+            }
+            is PhoneLinkStatus.Failed -> Text(status.message, color = Color(0xFFF28B82), fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun LevelChip(label: String, color: Color, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     FilterChip(
         selected = selected,
+        enabled = enabled,
         onClick = onClick,
         label = { Text(label) },
         colors = FilterChipDefaults.filterChipColors(
@@ -258,6 +309,7 @@ private fun LogRow(entry: LogEntry) {
         LogSource.PHONE -> Color(0xFF8AB4F8)
         LogSource.WATCH -> Color(0xFFFFB74D)
         LogSource.USER -> Color(0xFF81C995)
+        LogSource.PC -> Color(0xFFC58AF9)
     }
     Row(verticalAlignment = Alignment.Top) {
         Text(entry.time, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Muted)
