@@ -35,6 +35,23 @@ powershell -ExecutionPolicy Bypass -File scripts/reloj-emulador.ps1 -Exe
 El ejecutable queda en `watch-emulator/build/compose/binaries/main/app/WalkSecurityReloj/`. Si algo falla al
 abrirlo, el detalle queda en `%TEMP%\WalkSecurityReloj.log`.
 
+### Conectar el reloj del computador con el teléfono real
+
+El reloj del PC puede usar el **teléfono real** en lugar del simulado (demo completa del flujo
+reloj → teléfono → SMS):
+
+1. Conecta el teléfono por USB y abre el emulador (al arrancar ejecuta `adb reverse tcp:8766 tcp:8766`).
+2. En la app del teléfono: tarjeta del reloj → **Reloj** → activa **Reloj del computador**.
+3. El panel del PC muestra "Teléfono real conectado". Las zonas que elijas en el teléfono (*Simular zona*)
+   llegan al reloj del PC, y el **SOS del reloj del PC envía SMS reales desde el teléfono**.
+
+```
+Reloj del PC ──JSON por línea, localhost:8766──(adb reverse, cable USB)──► App del teléfono ──► SMS
+```
+
+El protocolo (`watch-core/.../shared/DesktopLink.kt`) cumple el mismo papel que el Wearable Data Layer
+con un reloj real. El emulador escucha solo en `localhost`: no queda expuesto a la red.
+
 ## Arquitectura
 
 ```
@@ -149,18 +166,22 @@ Así `http://127.0.0.1:8080` dentro del teléfono apunta al backend de tu PC. Ha
 cada vez que desconectes el cable. *(Alternativa por Wi-Fi: `API_BASE_URL=http://<IP-de-tu-PC>:8080/`
 en `local.properties`; solo funciona en builds debug.)*
 
-### 3. Google Maps API key
+### 3. Mapa
 
-1. En [Google Cloud Console](https://console.cloud.google.com/) habilita **Maps SDK for Android** y crea una API key.
-2. Restríngela a apps Android con el paquete `com.andres.walksecurity` y el SHA-1 de tu keystore de debug
-   (`./gradlew signingReport`).
-3. Añádela a `local.properties` (no se sube a git):
+Sin configurar nada, la app muestra **OpenStreetMap** (osmdroid, no necesita API key). Para usar
+**Google Maps** (el mapa previsto en el proyecto):
+
+1. En [Google Cloud Console](https://console.cloud.google.com/) crea un proyecto, habilita
+   **Maps SDK for Android** y crea una API key (Google pide una cuenta de facturación, aunque el SDK
+   para Android no cobra por cargar mapas).
+2. Restríngela a *Apps de Android* con el paquete `com.andres.walksecurity` y el SHA-1 de la llave de
+   debug (`./gradlew signingReport`). En el PC de desarrollo actual es
+   `78:7C:33:22:0A:22:65:DF:81:5B:57:F7:B6:D7:00:5B:56:D7:DA:AA`.
+3. Añádela a `local.properties` (no se sube a git) y vuelve a instalar la app:
 
 ```properties
 MAPS_API_KEY=tu_api_key
 ```
-
-Sin la key la app funciona igual, pero muestra un aviso en lugar del mapa.
 
 ### 4. Instalar la app
 
@@ -173,7 +194,9 @@ Desde Android Studio (▶ Run con el teléfono seleccionado) o:
 ### 5. Prueba de humo
 
 1. Regístrate (o *Usar sin cuenta* si el backend no está corriendo) → se piden permisos de ubicación y SMS.
-2. Agrega un contacto de confianza (usa **tu propio número** u otro teléfono tuyo para probar).
+2. **Agregar desde contactos** abre la agenda del teléfono: elige un número (usa **tu propio número** u
+   otro teléfono tuyo para probar). La app no pide permiso para leer toda la agenda: Android solo le
+   entrega el contacto elegido. El lápiz de la barra superior permite escribirlo a mano.
 3. Pulsa **SOS** → cuenta regresiva → llega un SMS con el enlace de Google Maps.
 4. En la consola del backend aparece `Alerta SOS #...` y el registro queda en la tabla `alerts`.
 
