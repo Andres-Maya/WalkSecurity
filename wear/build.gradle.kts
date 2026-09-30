@@ -36,7 +36,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":shared"))
+    implementation(project(":watch-core"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

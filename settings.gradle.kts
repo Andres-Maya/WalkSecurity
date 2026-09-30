@@ -24,5 +24,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "WalkSecurity"
 include(":app")
-include(":shared")
 include(":wear")
+include(":watch-core")
+include(":watch-emulator")

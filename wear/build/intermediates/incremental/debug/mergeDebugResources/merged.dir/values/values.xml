@@ -154,19 +154,14 @@
     <item name="compose_prefetch_scheduler" type="id"/>
     <item name="compose_view_saveable_id_tag" type="id"/>
     <item name="consume_window_insets_tag" type="id"/>
-    <item name="ghost_view" type="id"/>
-    <item name="ghost_view_holder" type="id"/>
     <item name="hide_graphics_layer_in_inspector_tag" type="id"/>
     <item name="hide_in_inspector_tag" type="id"/>
     <item name="inspection_slot_table_set" type="id"/>
     <item name="is_pooling_container_tag" type="id"/>
     <item name="line1" type="id"/>
     <item name="line3" type="id"/>
-    <item name="parent_matrix" type="id"/>
     <item name="pooling_container_listener_holder_tag" type="id"/>
     <item name="report_drawn" type="id"/>
-    <item name="save_non_transition_alpha" type="id"/>
-    <item name="save_overlay_view" type="id"/>
     <item name="tag_accessibility_actions" type="id"/>
     <item name="tag_accessibility_clickable_spans" type="id"/>
     <item name="tag_accessibility_heading" type="id"/>
@@ -185,14 +180,6 @@
     <item name="text" type="id"/>
     <item name="text2" type="id"/>
     <item name="title" type="id"/>
-    <item name="transition_clip" type="id"/>
-    <item name="transition_current_scene" type="id"/>
-    <item name="transition_image_transform" type="id"/>
-    <item name="transition_layout_save" type="id"/>
-    <item name="transition_pause_alpha" type="id"/>
-    <item name="transition_position" type="id"/>
-    <item name="transition_scene_layoutid_cache" type="id"/>
-    <item name="transition_transform" type="id"/>
     <id name="view_tree_disjoint_parent"/>
     <id name="view_tree_lifecycle_owner"/>
     <id name="view_tree_navigation_event_dispatcher_owner"/>

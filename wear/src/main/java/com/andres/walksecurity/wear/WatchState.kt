@@ -5,6 +5,7 @@ import android.net.Uri
 import com.andres.walksecurity.shared.RiskStatus
 import com.andres.walksecurity.shared.SosOutcome
 import com.andres.walksecurity.shared.WearProtocol
+import com.andres.walksecurity.shared.fromDataMap
 import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.PutDataRequest

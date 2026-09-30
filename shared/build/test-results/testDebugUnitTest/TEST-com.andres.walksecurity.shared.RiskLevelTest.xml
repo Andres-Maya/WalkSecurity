@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.andres.walksecurity.shared.RiskLevelTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-29T16:01:50.842Z" hostname="MAYAPC" time="0.458">
-  <properties/>
-  <testcase name="valores desconocidos se interpretan como seguro" classname="com.andres.walksecurity.shared.RiskLevelTest" time="0.142"/>
-  <testcase name="clasifica el puntaje segun los umbrales" classname="com.andres.walksecurity.shared.RiskLevelTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

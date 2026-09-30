@@ -9,8 +9,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.andres.walksecurity.wear.ui.WatchActions
-import com.andres.walksecurity.wear.ui.WatchApp
+import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.TimeText
+import com.andres.walksecurity.watch.ui.WatchActions
+import com.andres.walksecurity.watch.ui.WatchApp
 
 class MainActivity : ComponentActivity() {
 
@@ -35,22 +38,27 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        val controller = viewModel.controller
         val actions = WatchActions(
-            onSos = viewModel::onSosPressed,
-            onSendNow = viewModel::sendNow,
-            onCancel = viewModel::cancelSos,
-            onDismissResult = viewModel::dismissResult,
-            onImOk = viewModel::acknowledgeAlert,
-            onEmergency = viewModel::confirmEmergency,
+            onSos = controller::onSosPressed,
+            onSendNow = controller::sendNow,
+            onCancel = controller::cancelSos,
+            onDismissResult = controller::dismissResult,
+            onImOk = controller::acknowledgeAlert,
+            onEmergency = controller::confirmEmergency,
         )
         setContent {
-            val state by viewModel.uiState.collectAsStateWithLifecycle()
-            WatchApp(state, actions)
+            val state by controller.state.collectAsStateWithLifecycle()
+            MaterialTheme {
+                AppScaffold(timeText = { TimeText() }) {
+                    WatchApp(state, actions)
+                }
+            }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.refreshPhone()
+        viewModel.controller.refreshPhone()
     }
 }

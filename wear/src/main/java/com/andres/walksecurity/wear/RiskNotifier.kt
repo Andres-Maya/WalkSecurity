@@ -12,6 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.andres.walksecurity.shared.RiskLevel
 import com.andres.walksecurity.shared.RiskStatus
+import com.andres.walksecurity.watch.VibratorHaptics
 
 /**
  * Avisa cuando el nivel de riesgo SUBE (seguro -> precaución -> alerta).
@@ -30,7 +31,7 @@ object RiskNotifier {
         prefs.edit().putString(KEY_LAST_LEVEL, status.level.name).apply()
 
         if (status.level.ordinal > previous.ordinal) {
-            Haptics.riskChanged(context, status.level)
+            VibratorHaptics(context).riskChanged(status.level)
             showNotification(context, status)
         } else if (status.level == RiskLevel.SAFE) {
             NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)

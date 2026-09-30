@@ -1,10 +1,44 @@
 {
     "logs": [
         {
-            "outputFile": "com.andres.walksecurity.wear-mergeDebugResources-46:/values-en-rAU/values-en-rAU.xml",
+            "outputFile": "com.andres.walksecurity.wear-mergeDebugResources-49:/values-en-rAU/values-en-rAU.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\35d952463dddb620e3e558196d8e1e51\\transformed\\compose-material3-1.7.0\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\45ebd38fa8e6bf6a3c93b9fc57f3e735\\transformed\\foundation\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "from": {
+                        "startLines": "2,3,4",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "55,159,245",
+                        "endColumns": "103,85,84",
+                        "endOffsets": "154,240,325"
+                    },
+                    "to": {
+                        "startLines": "14,114,115",
+                        "startColumns": "4,4,4",
+                        "startOffsets": "767,11156,11242",
+                        "endColumns": "103,85,84",
+                        "endOffsets": "866,11237,11322"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\4274d7822bbb7966f80845df97a3abe1\\transformed\\core-1.19.1\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,151,253,352,451,555,658,774",
+                        "endColumns": "95,101,98,98,103,102,115,100",
+                        "endOffsets": "146,248,347,446,550,653,769,870"
+                    },
+                    "to": {
+                        "startLines": "16,17,18,19,20,21,22,110",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "967,1063,1165,1264,1363,1467,1570,10787",
+                        "endColumns": "95,101,98,98,103,102,115,100",
+                        "endOffsets": "1058,1160,1259,1358,1462,1565,1681,10883"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\561c0744d35d92aa2ce5a2ecad57cdf7\\transformed\\compose-material3-1.7.0\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,6,10,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -23,24 +57,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\e39963c1ea8fbc61ec1e6ef5beed00aa\\transformed\\core-1.19.1\\res\\values-en-rAU\\values-en-rAU.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,151,253,352,451,555,658,774",
-                        "endColumns": "95,101,98,98,103,102,115,100",
-                        "endOffsets": "146,248,347,446,550,653,769,870"
-                    },
-                    "to": {
-                        "startLines": "16,17,18,19,20,21,22,110",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "967,1063,1165,1264,1363,1467,1570,10787",
-                        "endColumns": "95,101,98,98,103,102,115,100",
-                        "endOffsets": "1058,1160,1259,1358,1462,1565,1681,10883"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\d7a04a2c0da70ddb544ed6d51d092581\\transformed\\material3\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\cfaf428ed787fad2e7c5101668bac24f\\transformed\\material3\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -57,7 +74,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\3b9eab0f9875d8ad92038c78c890cf04\\transformed\\ui\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\c7a55833c6f89db6f9b82df0d987d2ac\\transformed\\ui\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -71,23 +88,6 @@
                         "startOffsets": "871,1686,1778,1860,1954,2053,2140,2222,9391,9480,10252,10330,10412,10485,10569,10645,10717,10888,10965,11031",
                         "endColumns": "95,91,81,93,98,86,81,88,88,83,77,81,72,83,75,71,69,76,65,124",
                         "endOffsets": "962,1773,1855,1949,2048,2135,2217,2306,9475,9559,10325,10407,10480,10564,10640,10712,10782,10960,11026,11151"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\andre\\.gradle\\caches\\9.6.0\\transforms\\820176ae684a42753de412e036b6020d\\transformed\\foundation\\res\\values-en-rAU\\values-en-rAU.xml",
-                    "from": {
-                        "startLines": "2,3,4",
-                        "startColumns": "4,4,4",
-                        "startOffsets": "55,159,245",
-                        "endColumns": "103,85,84",
-                        "endOffsets": "154,240,325"
-                    },
-                    "to": {
-                        "startLines": "14,114,115",
-                        "startColumns": "4,4,4",
-                        "startOffsets": "767,11156,11242",
-                        "endColumns": "103,85,84",
-                        "endOffsets": "866,11237,11322"
                     }
                 }
             ]
