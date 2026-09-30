@@ -1,10 +1,12 @@
 package com.andres.walksecurity.ui.contacts
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.andres.walksecurity.appContainer
+import com.andres.walksecurity.core.contacts.PhoneContactsReader
 import com.andres.walksecurity.core.model.TrustedContact
 import com.andres.walksecurity.core.model.Validators
 import com.andres.walksecurity.data.repository.AuthRepository
@@ -17,19 +19,23 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** Datos del contacto antes de guardarlo (vacío si se escribe a mano, prellenado desde la agenda). */
+data class ContactDraft(val name: String = "", val phone: String = "", val fromPhonebook: Boolean = false)
+
 data class ContactsUiState(
     val contacts: List<TrustedContact> = emptyList(),
     /** Modo local: no hay servidor con el que sincronizar. */
     val isLocal: Boolean = false,
     val refreshing: Boolean = false,
-    val showAddDialog: Boolean = false,
+    /** Diálogo de nuevo contacto abierto con estos datos. */
+    val draft: ContactDraft? = null,
     val formError: String? = null,
     val message: String? = null,
 )
 
 private data class LocalState(
     val refreshing: Boolean = false,
-    val showAddDialog: Boolean = false,
+    val draft: ContactDraft? = null,
     val formError: String? = null,
     val message: String? = null,
 )
@@ -37,6 +43,7 @@ private data class LocalState(
 class ContactsViewModel(
     private val repository: ContactsRepository,
     authRepository: AuthRepository,
+    private val phoneContacts: PhoneContactsReader,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(LocalState())
@@ -50,7 +57,7 @@ class ContactsViewModel(
             contacts = contacts,
             isLocal = session?.isLocal ?: true,
             refreshing = l.refreshing,
-            showAddDialog = l.showAddDialog,
+            draft = l.draft,
             formError = l.formError,
             message = l.message,
         )
@@ -82,15 +89,31 @@ class ContactsViewModel(
         }
     }
 
-    fun openAddDialog() {
-        if (uiState.value.contacts.size >= ContactsRepository.MAX_CONTACTS) {
-            local.update { it.copy(message = "Puedes tener máximo ${ContactsRepository.MAX_CONTACTS} contactos de confianza.") }
-            return
-        }
-        local.update { it.copy(showAddDialog = true, formError = null) }
+    /** @return false (y avisa) si ya se alcanzó el máximo de contactos. */
+    fun canAdd(): Boolean {
+        if (uiState.value.contacts.size < ContactsRepository.MAX_CONTACTS) return true
+        local.update { it.copy(message = "Puedes tener máximo ${ContactsRepository.MAX_CONTACTS} contactos de confianza.") }
+        return false
     }
 
-    fun closeAddDialog() = local.update { it.copy(showAddDialog = false, formError = null) }
+    /** Escribir el contacto a mano (o si el teléfono no tiene app de contactos). */
+    fun startManual() = local.update { it.copy(draft = ContactDraft(), formError = null) }
+
+    /** El usuario eligió un número en la agenda: se abre el diálogo prellenado para confirmar. */
+    fun onContactPicked(uri: Uri) {
+        viewModelScope.launch {
+            val picked = phoneContacts.read(uri)
+            local.update {
+                if (picked == null) {
+                    it.copy(message = "No se pudo leer ese contacto. Escríbelo a mano.", draft = ContactDraft())
+                } else {
+                    it.copy(draft = ContactDraft(picked.name, picked.phone, fromPhonebook = true), formError = null)
+                }
+            }
+        }
+    }
+
+    fun closeAddDialog() = local.update { it.copy(draft = null, formError = null) }
 
     /** Se guarda al instante en el teléfono; la subida al servidor ocurre en segundo plano. */
     fun add(name: String, phone: String, relationship: String) {
@@ -107,7 +130,7 @@ class ContactsViewModel(
         }
         viewModelScope.launch {
             repository.add(name, phone, relationship)
-            local.update { it.copy(showAddDialog = false, formError = null) }
+            local.update { it.copy(draft = null, formError = null, message = "${name.trim()} recibirá tus alertas.") }
         }
     }
 
@@ -119,7 +142,7 @@ class ContactsViewModel(
 
     companion object {
         val Factory = viewModelFactory {
-            initializer { with(appContainer) { ContactsViewModel(contactsRepository, authRepository) } }
+            initializer { with(appContainer) { ContactsViewModel(contactsRepository, authRepository, phoneContactsReader) } }
         }
     }
 }

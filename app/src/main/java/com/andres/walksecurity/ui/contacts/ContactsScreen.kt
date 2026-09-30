@@ -1,5 +1,7 @@
 package com.andres.walksecurity.ui.contacts
 
+import android.content.ActivityNotFoundException
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -44,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.andres.walksecurity.core.contacts.PickPhoneNumber
 import com.andres.walksecurity.core.model.TrustedContact
 import com.andres.walksecurity.ui.components.FormTextField
 
@@ -56,6 +60,20 @@ fun ContactsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingDelete by remember { mutableStateOf<TrustedContact?>(null) }
+
+    // "Agregar" abre la agenda del teléfono; el número elegido llega prellenado al diálogo
+    val pickFromPhonebook = rememberLauncherForActivityResult(PickPhoneNumber()) { uri ->
+        uri?.let(viewModel::onContactPicked)
+    }
+    val openPhonebook: () -> Unit = {
+        if (viewModel.canAdd()) {
+            try {
+                pickFromPhonebook.launch(Unit)
+            } catch (_: ActivityNotFoundException) {
+                viewModel.startManual() // sin app de contactos: se escribe a mano
+            }
+        }
+    }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -73,13 +91,18 @@ fun ContactsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
+                actions = {
+                    IconButton(onClick = { if (viewModel.canAdd()) viewModel.startManual() }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Escribir un número a mano")
+                    }
+                },
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = viewModel::openAddDialog,
+                onClick = openPhonebook,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Agregar") },
+                text = { Text("Agregar desde contactos") },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -113,8 +136,9 @@ fun ContactsScreen(
         }
     }
 
-    if (state.showAddDialog) {
+    state.draft?.let { draft ->
         AddContactDialog(
+            draft = draft,
             error = state.formError,
             onSave = viewModel::add,
             onDismiss = viewModel::closeAddDialog,
@@ -144,7 +168,7 @@ private fun EmptyContacts() {
         item {
             Box(Modifier.fillMaxWidth().padding(top = 96.dp), contentAlignment = Alignment.Center) {
                 Text(
-                    "Aún no tienes contactos de confianza.\nAgrega a las personas que deben enterarse si activas el SOS.",
+                    "Aún no tienes contactos de confianza.\nToca Agregar desde contactos y elige a quienes deben enterarse si activas el SOS.",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -183,19 +207,27 @@ private fun ContactRow(contact: TrustedContact, isLocal: Boolean, onDelete: () -
 
 @Composable
 private fun AddContactDialog(
+    draft: ContactDraft,
     error: String?,
     onSave: (name: String, phone: String, relationship: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
-    var phone by rememberSaveable { mutableStateOf("") }
-    var relationship by rememberSaveable { mutableStateOf("") }
+    // Se reinicia con cada contacto elegido en la agenda
+    var name by rememberSaveable(draft) { mutableStateOf(draft.name) }
+    var phone by rememberSaveable(draft) { mutableStateOf(draft.phone) }
+    var relationship by rememberSaveable(draft) { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nuevo contacto") },
+        title = { Text(if (draft.fromPhonebook) "Confirmar contacto" else "Nuevo contacto") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (draft.fromPhonebook) {
+                    Text(
+                        "Revisa el número (idealmente con indicativo, p. ej. +57) y agrega el parentesco.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
                 FormTextField(name, { name = it }, "Nombre")
                 FormTextField(phone, { phone = it }, "Teléfono (+57…)", keyboardType = KeyboardType.Phone)
                 FormTextField(
