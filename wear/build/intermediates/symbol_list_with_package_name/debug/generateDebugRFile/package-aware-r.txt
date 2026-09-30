@@ -1,7 +1,0 @@
-com.andres.walksecurity.wear
-array android_wear_capabilities
-drawable ic_launcher_background
-drawable ic_launcher_foreground
-mipmap ic_launcher
-mipmap ic_launcher_round
-string app_name
