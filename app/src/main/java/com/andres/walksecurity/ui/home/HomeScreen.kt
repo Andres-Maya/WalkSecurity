@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -56,6 +55,10 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andres.walksecurity.core.model.GeoPoint
+import com.andres.walksecurity.core.model.Profile
+import com.andres.walksecurity.ui.components.FormTextField
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import com.andres.walksecurity.ui.theme.SosRed
 import com.andres.walksecurity.ui.theme.SosRedDark
 import java.util.Locale
@@ -71,12 +74,10 @@ private val REQUIRED_PERMISSIONS = arrayOf(
 fun HomeScreen(
     onOpenContacts: () -> Unit,
     onOpenWatch: () -> Unit,
-    onLogin: () -> Unit,
-    onRegister: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val context = LocalContext.current
-    var confirmLogout by rememberSaveable { mutableStateOf(false) }
+    var editingProfile by rememberSaveable { mutableStateOf(false) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val location by viewModel.location.collectAsStateWithLifecycle()
 
@@ -109,9 +110,6 @@ fun HomeScreen(
                 actions = {
                     IconButton(onClick = onOpenContacts) {
                         Icon(Icons.Filled.Person, contentDescription = "Contactos de confianza")
-                    }
-                    IconButton(onClick = { confirmLogout = true }) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar sesión")
                     }
                 },
             )
@@ -147,7 +145,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (state.isLocal) LocalModeCard(onLogin = onLogin, onRegister = onRegister)
+                if (!state.profile.hasName) ProfilePrompt(onClick = { editingProfile = true })
                 PermissionWarnings(
                     permissions = state.permissions,
                     onRequest = { permissionLauncher.launch(REQUIRED_PERMISSIONS) },
@@ -164,7 +162,8 @@ fun HomeScreen(
                     },
                 )
                 StatusCard(
-                    userName = state.user?.name,
+                    userName = state.profile.name.ifBlank { null },
+                    onEditProfile = { editingProfile = true },
                     location = location,
                     contactsCount = state.contactsCount,
                     onOpenContacts = onOpenContacts,
@@ -174,26 +173,11 @@ fun HomeScreen(
         }
     }
 
-    if (confirmLogout) {
-        AlertDialog(
-            onDismissRequest = { confirmLogout = false },
-            title = { Text("Cerrar sesión") },
-            text = {
-                Text(
-                    if (state.isLocal) {
-                        "Estás en modo local: se borrarán de este teléfono tu perfil y tus contactos de emergencia."
-                    } else {
-                        "Se borrarán de este teléfono tu sesión y tus contactos. Volverán al iniciar sesión."
-                    }
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmLogout = false
-                    viewModel.logout()
-                }) { Text("Cerrar sesión") }
-            },
-            dismissButton = { TextButton(onClick = { confirmLogout = false }) { Text("Cancelar") } },
+    if (editingProfile) {
+        ProfileDialog(
+            initial = state.profile,
+            onSave = { name, phone -> viewModel.saveProfile(name, phone).also { if (it == null) editingProfile = false } },
+            onDismiss = { editingProfile = false },
         )
     }
 
@@ -256,25 +240,48 @@ private fun BackgroundLocationHint(onRequest: () -> Unit) {
     }
 }
 
+/** Aparece mientras no haya nombre: sin él, el SMS diría "Un contacto necesita ayuda". */
 @Composable
-private fun LocalModeCard(onLogin: () -> Unit, onRegister: () -> Unit) {
+private fun ProfilePrompt(onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
     ) {
-        Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)) {
+        Row(Modifier.padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Modo local: tus contactos se guardan solo en este teléfono. " +
-                    "El SOS por SMS funciona igual.",
+                "Escribe tu nombre para que tus contactos sepan quién pide ayuda.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.weight(1f),
             )
-            Row {
-                TextButton(onClick = onRegister) { Text("Crear cuenta") }
-                TextButton(onClick = onLogin) { Text("Iniciar sesión") }
-            }
+            TextButton(onClick = onClick) { Text("Escribir") }
         }
     }
+}
+
+@Composable
+private fun ProfileDialog(
+    initial: Profile,
+    onSave: (name: String, phone: String) -> String?,
+    onDismiss: () -> Unit,
+) {
+    var name by rememberSaveable { mutableStateOf(initial.name) }
+    var phone by rememberSaveable { mutableStateOf(initial.phone) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tus datos") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Tu nombre aparece en los SMS de emergencia.", style = MaterialTheme.typography.bodySmall)
+                FormTextField(name, { name = it }, "Tu nombre")
+                FormTextField(phone, { phone = it }, "Tu teléfono (opcional)", keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done)
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+            }
+        },
+        confirmButton = { Button(onClick = { error = onSave(name, phone) }) { Text("Guardar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
 }
 
 @Composable
@@ -301,16 +308,21 @@ private fun WatchCard(watch: WatchUi, onOpenWatch: () -> Unit) {
 @Composable
 private fun StatusCard(
     userName: String?,
+    onEditProfile: () -> Unit,
     location: GeoPoint?,
     contactsCount: Int,
     onOpenContacts: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                "Hola${userName?.let { ", ${it.substringBefore(' ')}" }.orEmpty()}",
-                style = MaterialTheme.typography.titleMedium,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Hola${userName?.let { ", ${it.substringBefore(' ')}" }.orEmpty()}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                if (userName != null) TextButton(onClick = onEditProfile) { Text("Editar") }
+            }
             Text(
                 text = location?.let {
                     val accuracy = it.accuracyMeters?.let { a -> " · ±${a.toInt()} m" }.orEmpty()

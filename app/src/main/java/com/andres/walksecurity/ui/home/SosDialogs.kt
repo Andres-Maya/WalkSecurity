@@ -111,13 +111,7 @@ private fun SosResultDialog(result: SosResult, onDismiss: () -> Unit) {
                         else -> "SMS enviados: ${result.smsSent} de ${result.contactsTotal} contactos."
                     }
                 )
-                Text(
-                    when {
-                        result.localMode -> "Modo local: la alerta no se registra en el servidor."
-                        result.serverRegistered -> "Alerta registrada en el servidor."
-                        else -> "El servidor no respondió; la alerta no quedó registrada."
-                    }
-                )
+                if (result.serverRegistered) Text("Alerta registrada también en el servidor.")
                 Text(
                     result.location?.let { "Ubicación: ${SosMessageBuilder.mapsUrl(it)}" }
                         ?: "No se pudo obtener tu ubicación.",

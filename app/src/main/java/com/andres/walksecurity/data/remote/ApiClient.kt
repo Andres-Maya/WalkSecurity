@@ -44,8 +44,8 @@ object ApiClient {
 }
 
 /**
- * Adjunta el JWT. Si el servidor lo rechaza (expirado), se pasa a modo local
- * conservando los contactos de emergencia; la app pedirá volver a iniciar sesión.
+ * Adjunta el JWT. Si el servidor lo rechaza (expirado o base de datos nueva), se descarta y el
+ * teléfono se vuelve a identificar solo en la próxima sincronización. Nunca se borran datos.
  */
 private class AuthInterceptor(private val sessionStore: SessionStore) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {

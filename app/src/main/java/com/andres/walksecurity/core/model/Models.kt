@@ -28,11 +28,12 @@ data class TrustedContact(
 )
 
 /**
- * @property token null = modo local: sin cuenta en el servidor (o sesión expirada);
- *   la app funciona igual y los datos se guardan solo en el teléfono.
+ * Datos de quien usa la app (no hay inicio de sesión). El nombre aparece en los SMS de emergencia
+ * para que los contactos sepan quién pide ayuda.
  */
-data class Session(val token: String?, val user: User) {
-    val isLocal: Boolean get() = token == null
+@Serializable
+data class Profile(val name: String = "", val phone: String = "") {
+    val hasName: Boolean get() = name.isNotBlank()
 }
 
 data class GeoPoint(
@@ -49,6 +50,4 @@ data class SosResult(
     val smsSent: Int,
     val smsAvailable: Boolean,
     val serverRegistered: Boolean,
-    /** Modo local: no se intentó registrar la alerta en el servidor. */
-    val localMode: Boolean = false,
 )

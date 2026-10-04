@@ -9,7 +9,6 @@ import com.andres.walksecurity.appContainer
 import com.andres.walksecurity.core.contacts.PhoneContactsReader
 import com.andres.walksecurity.core.model.TrustedContact
 import com.andres.walksecurity.core.model.Validators
-import com.andres.walksecurity.data.repository.AuthRepository
 import com.andres.walksecurity.data.repository.ContactsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,9 +23,6 @@ data class ContactDraft(val name: String = "", val phone: String = "", val fromP
 
 data class ContactsUiState(
     val contacts: List<TrustedContact> = emptyList(),
-    /** Modo local: no hay servidor con el que sincronizar. */
-    val isLocal: Boolean = false,
-    val refreshing: Boolean = false,
     /** Diálogo de nuevo contacto abierto con estos datos. */
     val draft: ContactDraft? = null,
     val formError: String? = null,
@@ -34,7 +30,6 @@ data class ContactsUiState(
 )
 
 private data class LocalState(
-    val refreshing: Boolean = false,
     val draft: ContactDraft? = null,
     val formError: String? = null,
     val message: String? = null,
@@ -42,21 +37,14 @@ private data class LocalState(
 
 class ContactsViewModel(
     private val repository: ContactsRepository,
-    authRepository: AuthRepository,
     private val phoneContacts: PhoneContactsReader,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(LocalState())
 
-    val uiState: StateFlow<ContactsUiState> = combine(
-        repository.contacts,
-        authRepository.session,
-        local,
-    ) { contacts, session, l ->
+    val uiState: StateFlow<ContactsUiState> = combine(repository.contacts, local) { contacts, l ->
         ContactsUiState(
             contacts = contacts,
-            isLocal = session?.isLocal ?: true,
-            refreshing = l.refreshing,
             draft = l.draft,
             formError = l.formError,
             message = l.message,
@@ -64,29 +52,8 @@ class ContactsViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ContactsUiState())
 
     init {
+        // Respaldo automático en el servidor si está disponible (silencioso)
         repository.requestSync()
-    }
-
-    /** "Deslizar para actualizar": sincroniza con el servidor si hay cuenta. */
-    fun refresh() {
-        if (uiState.value.isLocal) {
-            local.update { it.copy(message = "Modo local: tus contactos están guardados en este teléfono.") }
-            return
-        }
-        viewModelScope.launch {
-            local.update { it.copy(refreshing = true) }
-            val failed = repository.sync().isFailure
-            local.update {
-                it.copy(
-                    refreshing = false,
-                    message = if (failed) {
-                        "Sin conexión con el servidor. Tus contactos están guardados en el teléfono y se sincronizarán después."
-                    } else {
-                        "Contactos sincronizados."
-                    },
-                )
-            }
-        }
     }
 
     /** @return false (y avisa) si ya se alcanzó el máximo de contactos. */
@@ -142,7 +109,7 @@ class ContactsViewModel(
 
     companion object {
         val Factory = viewModelFactory {
-            initializer { with(appContainer) { ContactsViewModel(contactsRepository, authRepository, phoneContactsReader) } }
+            initializer { with(appContainer) { ContactsViewModel(contactsRepository, phoneContactsReader) } }
         }
     }
 }

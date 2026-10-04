@@ -12,11 +12,9 @@ import retrofit2.http.Path
 /** Contrato con el backend Spring Boot (ver backend/README.md). */
 interface ApiService {
 
-    @POST("api/auth/register")
-    suspend fun register(@Body body: RegisterRequest): AuthResponse
-
-    @POST("api/auth/login")
-    suspend fun login(@Body body: LoginRequest): AuthResponse
+    /** Identificación automática del teléfono (la app no tiene inicio de sesión). */
+    @POST("api/auth/device")
+    suspend fun registerDevice(@Body body: DeviceRequest): AuthResponse
 
     @GET("api/contacts")
     suspend fun contacts(): List<ContactDto>
@@ -32,10 +30,7 @@ interface ApiService {
 }
 
 @Serializable
-data class RegisterRequest(val name: String, val email: String, val phone: String, val password: String)
-
-@Serializable
-data class LoginRequest(val email: String, val password: String)
+data class DeviceRequest(val deviceId: String, val name: String, val phone: String? = null)
 
 @Serializable
 data class AuthResponse(val token: String, val user: User)

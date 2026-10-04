@@ -31,7 +31,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -107,9 +106,7 @@ fun ContactsScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = state.refreshing,
-            onRefresh = viewModel::refresh,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -129,7 +126,7 @@ fun ContactsScreen(
                         )
                     }
                     items(state.contacts, key = { it.localId }) { contact ->
-                        ContactRow(contact, isLocal = state.isLocal, onDelete = { pendingDelete = contact })
+                        ContactRow(contact, onDelete = { pendingDelete = contact })
                     }
                 }
             }
@@ -163,7 +160,6 @@ fun ContactsScreen(
 
 @Composable
 private fun EmptyContacts() {
-    // Columna desplazable para que el gesto de "deslizar para refrescar" funcione con la lista vacía
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(32.dp)) {
         item {
             Box(Modifier.fillMaxWidth().padding(top = 96.dp), contentAlignment = Alignment.Center) {
@@ -178,7 +174,7 @@ private fun EmptyContacts() {
 }
 
 @Composable
-private fun ContactRow(contact: TrustedContact, isLocal: Boolean, onDelete: () -> Unit) {
+private fun ContactRow(contact: TrustedContact, onDelete: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
@@ -190,13 +186,6 @@ private fun ContactRow(contact: TrustedContact, isLocal: Boolean, onDelete: () -
                     listOfNotNull(contact.phone, contact.relationship).joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                if (contact.serverId == null) {
-                    Text(
-                        if (isLocal) "Guardado en este teléfono" else "Pendiente de sincronizar",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
-                }
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Filled.Delete, contentDescription = "Eliminar ${contact.name}")

@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -59,7 +60,8 @@ fun OsmMap(location: GeoPoint?, modifier: Modifier = Modifier) {
         }
     }
 
-    AndroidView(factory = { mapView }, modifier = modifier) { view ->
+    // clipToBounds: osmdroid dibuja mosaicos fuera de su área y taparía las tarjetas de abajo
+    AndroidView(factory = { mapView }, modifier = modifier.clipToBounds()) { view ->
         if (location == null) return@AndroidView
         val point = OsmPoint(location.latitude, location.longitude)
         marker.position = point

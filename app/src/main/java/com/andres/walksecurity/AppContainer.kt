@@ -7,9 +7,9 @@ import com.andres.walksecurity.core.sms.SmsSender
 import com.andres.walksecurity.data.local.SessionStore
 import com.andres.walksecurity.data.remote.ApiClient
 import com.andres.walksecurity.data.repository.AlertRepository
-import com.andres.walksecurity.data.repository.AuthRepository
 import com.andres.walksecurity.data.repository.ContactsRepository
 import com.andres.walksecurity.data.repository.RiskStatusRepository
+import com.andres.walksecurity.data.repository.ServerAccount
 import com.andres.walksecurity.watch.VibratorHaptics
 import com.andres.walksecurity.watch.WatchController
 import com.andres.walksecurity.wear.DesktopWatchLink
@@ -31,9 +31,10 @@ class AppContainer(private val context: Context) {
 
     private val api = ApiClient.create(BuildConfig.API_BASE_URL, sessionStore)
 
-    val contactsRepository = ContactsRepository(api, sessionStore, appScope)
-    val authRepository = AuthRepository(api, sessionStore, contactsRepository)
-    val alertRepository = AlertRepository(api, sessionStore, locationClient, smsSender, appScope)
+    private val serverAccount = ServerAccount(api, sessionStore)
+
+    val contactsRepository = ContactsRepository(api, sessionStore, serverAccount, appScope)
+    val alertRepository = AlertRepository(api, sessionStore, serverAccount, locationClient, smsSender, appScope)
     val riskStatusRepository = RiskStatusRepository(watchBridge)
 
     /**

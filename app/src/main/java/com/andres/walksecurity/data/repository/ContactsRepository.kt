@@ -23,6 +23,7 @@ import java.util.UUID
 class ContactsRepository(
     private val api: ApiService,
     private val sessionStore: SessionStore,
+    private val serverAccount: ServerAccount,
     private val appScope: CoroutineScope,
 ) {
     private val syncMutex = Mutex()
@@ -61,12 +62,11 @@ class ContactsRepository(
     }
 
     /**
-     * 1) Elimina en el servidor lo borrado en el teléfono, 2) fusiona con la lista del servidor,
-     * 3) sube los contactos nuevos. En modo local no hace nada.
+     * Respaldo en el servidor: 1) elimina allí lo borrado en el teléfono, 2) fusiona con su lista,
+     * 3) sube los contactos nuevos. Si el servidor no está disponible, no hace nada.
      */
     suspend fun sync(): Result<Unit> = syncMutex.withLock {
-        val session = sessionStore.currentSession()
-        if (session == null || session.isLocal) return@withLock Result.success(Unit)
+        if (!serverAccount.ensureToken()) return@withLock Result.failure(IllegalStateException("Servidor no disponible"))
 
         for (contact in sessionStore.contactsSnapshot().filter { it.pendingDelete }) {
             val serverId = contact.serverId ?: continue

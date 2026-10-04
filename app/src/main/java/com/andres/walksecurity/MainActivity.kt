@@ -14,11 +14,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val container = (application as WalkSecurityApp).container
         setContent {
             WalkSecurityTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    WalkSecurityRoot(container.authRepository)
+                    WalkSecurityRoot()
                 }
             }
         }

@@ -96,7 +96,7 @@ class DesktopWatchLink(
         val writeLock = Mutex()
         val send: suspend (LinkMessage) -> Unit = { message -> writeLock.withLock { writer.writeLine(message) } }
 
-        send(LinkMessage.Hello(device = "${Build.MANUFACTURER} ${Build.MODEL}", userName = sessionStore.currentUser()?.name))
+        send(LinkMessage.Hello(device = "${Build.MANUFACTURER} ${Build.MODEL}", userName = sessionStore.currentProfile().name.ifBlank { null }))
         _state.value = DesktopLinkState.Connected
 
         // Si aún no se ha elegido zona, el reloj arranca en "zona segura"

@@ -8,10 +8,11 @@ import com.andres.walksecurity.appContainer
 import com.andres.walksecurity.core.location.LocationClient
 import com.andres.walksecurity.core.model.GeoPoint
 import com.andres.walksecurity.core.model.SosResult
-import com.andres.walksecurity.core.model.User
+import com.andres.walksecurity.core.model.Profile
+import com.andres.walksecurity.core.model.Validators
 import com.andres.walksecurity.core.sms.SmsSender
 import com.andres.walksecurity.data.repository.AlertRepository
-import com.andres.walksecurity.data.repository.AuthRepository
+import com.andres.walksecurity.data.local.SessionStore
 import com.andres.walksecurity.data.repository.ContactsRepository
 import com.andres.walksecurity.wear.WatchBridge
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,9 +51,8 @@ data class WatchUi(
 )
 
 data class HomeUiState(
-    val user: User? = null,
-    /** Sin cuenta en el servidor (o sesión expirada): los datos viven solo en el teléfono. */
-    val isLocal: Boolean = false,
+    /** Perfil local: el nombre aparece en los SMS de emergencia. */
+    val profile: Profile = Profile(),
     val permissions: PermissionsState = PermissionsState(),
     val contactsCount: Int = 0,
     val sos: SosState = SosState.Idle,
@@ -60,7 +60,7 @@ data class HomeUiState(
 )
 
 class HomeViewModel(
-    private val authRepository: AuthRepository,
+    private val sessionStore: SessionStore,
     private val contactsRepository: ContactsRepository,
     private val alertRepository: AlertRepository,
     private val locationClient: LocationClient,
@@ -74,15 +74,14 @@ class HomeViewModel(
     private var countdownJob: Job? = null
 
     val uiState: StateFlow<HomeUiState> = combine(
-        authRepository.session,
+        sessionStore.profile,
         permissions,
         contactsRepository.contacts.map { it.size },
         sos,
         watch,
-    ) { session, perms, contactsCount, sosState, watchUi ->
+    ) { profile, perms, contactsCount, sosState, watchUi ->
         HomeUiState(
-            user = session?.user,
-            isLocal = session?.isLocal ?: true,
+            profile = profile,
             permissions = perms,
             contactsCount = contactsCount,
             sos = sosState,
@@ -143,8 +142,20 @@ class HomeViewModel(
         if (sos.value != SosState.Sending) sos.value = SosState.Idle
     }
 
-    fun logout() {
-        viewModelScope.launch { authRepository.logout() }
+    /** @return mensaje de error, o null si se guardó. */
+    fun saveProfile(name: String, phone: String): String? {
+        val error = when {
+            name.isBlank() -> "Escribe tu nombre: tus contactos lo verán en el SMS de emergencia."
+            phone.isNotBlank() && !Validators.isValidPhone(phone) -> "Teléfono inválido (7 a 15 dígitos, puede iniciar con +)."
+            else -> null
+        }
+        if (error == null) {
+            viewModelScope.launch {
+                sessionStore.saveProfile(Profile(name.trim(), Validators.normalizePhone(phone)))
+                contactsRepository.requestSync() // actualiza el nombre en el servidor si está disponible
+            }
+        }
+        return error
     }
 
     private suspend fun send() {
@@ -159,7 +170,7 @@ class HomeViewModel(
         val Factory = viewModelFactory {
             initializer {
                 with(appContainer) {
-                    HomeViewModel(authRepository, contactsRepository, alertRepository, locationClient, smsSender, watchBridge)
+                    HomeViewModel(sessionStore, contactsRepository, alertRepository, locationClient, smsSender, watchBridge)
                 }
             }
         }
