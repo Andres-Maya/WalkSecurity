@@ -141,9 +141,10 @@ app/src/main/java/com/andres/walksecurity/
 ## Roadmap
 
 - [x] **Fase 1** – Perfil sin inicio de sesión, GPS, mapa, contactos de confianza, botón SOS (SMS + registro en API)
-- [ ] **Fase 2** *(parcial)* – Hecho: zonas de riesgo en el mapa y detección automática con el GPS
-      **mientras la app está abierta** (seguro < 0.4 ≤ precaución < 0.7 ≤ alerta); al cambiar de nivel
-      se avisa al reloj. Falta: Geofencing API en segundo plano, notificaciones y servir las zonas desde la API
+- [ ] **Fase 2** *(parcial)* – Hecho: zonas de riesgo en el mapa, detección con el GPS con la app
+      abierta y **en segundo plano con la Geofencing API** (requiere ubicación "Todo el tiempo"), con
+      notificación en el teléfono y aviso al reloj al cambiar de nivel (seguro < 0.4 ≤ precaución < 0.7 ≤ alerta).
+      Falta: probarla caminando por una zona real y servir las zonas desde la API
 - [x] **Fase 3** *(adelantada, prioridad del proyecto)* – Módulo `wear/`: 3 estados + SOS, vibración,
       comunicación con el teléfono (Wearable Data Layer). Mientras llega la fase 2, el estado de riesgo
       se prueba con el **simulador** de la pantalla *Reloj emulado* del teléfono.
