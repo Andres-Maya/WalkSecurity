@@ -22,6 +22,17 @@ public final class AuthDtos {
         @NotBlank(message = "La contraseña es obligatoria.") String password
     ) {}
 
+    /**
+     * Identificación automática del teléfono (sin inicio de sesión). El deviceId es un UUID aleatorio
+     * que la app genera una vez y guarda en el teléfono: funciona como su credencial.
+     */
+    public record DeviceRequest(
+        @NotBlank(message = "El identificador del dispositivo es obligatorio.")
+        @Pattern(regexp = "^[A-Za-z0-9-]{16,64}$", message = "Identificador de dispositivo inválido.") String deviceId,
+        @Size(max = 120) String name,
+        @Pattern(regexp = "^$|^\\+?\\d{7,15}$", message = "Teléfono inválido.") String phone
+    ) {}
+
     public record UserResponse(long id, String name, String email, String phone) {
         static UserResponse from(AppUser user) {
             return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getPhone());

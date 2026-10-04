@@ -3,6 +3,7 @@ package com.andres.walksecurity.api.user;
 import com.andres.walksecurity.api.common.ApiException;
 import com.andres.walksecurity.api.common.CurrentUser;
 import com.andres.walksecurity.api.user.AuthDtos.AuthResponse;
+import com.andres.walksecurity.api.user.AuthDtos.DeviceRequest;
 import com.andres.walksecurity.api.user.AuthDtos.LoginRequest;
 import com.andres.walksecurity.api.user.AuthDtos.RegisterRequest;
 import com.andres.walksecurity.api.user.AuthDtos.UserResponse;
@@ -31,6 +32,12 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
+    }
+
+    /** Identificación automática del teléfono: la app no muestra pantalla de inicio de sesión. */
+    @PostMapping("/api/auth/device")
+    public AuthResponse device(@Valid @RequestBody DeviceRequest request) {
+        return authService.registerDevice(request);
     }
 
     @PostMapping("/api/auth/login")

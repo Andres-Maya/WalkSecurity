@@ -26,6 +26,7 @@ Todos los errores responden `{"message": "..."}`. Salvo `/api/auth/**`, todo req
 |--------|-----------------------|------------------------------------------------|
 | POST   | `/api/auth/register`  | `{name, email, phone, password}` → `{token, user}` (201; 409 si el correo existe) |
 | POST   | `/api/auth/login`     | `{email, password}` → `{token, user}` (401 si falla) |
+| POST   | `/api/auth/device`    | `{deviceId, name?, phone?}` → `{token, user}`. **Lo usa la app** (no tiene inicio de sesión): crea o actualiza el usuario de ese teléfono |
 | GET    | `/api/users/me`       | Usuario autenticado                            |
 | GET    | `/api/contacts`       | Contactos de confianza                         |
 | POST   | `/api/contacts`       | `{name, phone, relationship?}` (máx. 10; 409 si el número se repite) |

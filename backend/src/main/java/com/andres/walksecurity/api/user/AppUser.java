@@ -40,6 +40,12 @@ public class AppUser {
         this.passwordHash = passwordHash;
     }
 
+    /** Actualiza el perfil (el nombre aparece en los SMS de emergencia). */
+    public void updateProfile(String name, String phone) {
+        this.name = name;
+        this.phone = phone;
+    }
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getEmail() { return email; }
