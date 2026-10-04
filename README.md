@@ -90,7 +90,7 @@ Monolito modular cliente-servidor (sin microservicios por ahora):
 | `wear/`    | Kotlin, Compose for Wear OS          | Reloj: estados seguro/precaución/alerta, vibración, SOS |
 | `watch-core/` | Kotlin Multiplatform, Compose Multiplatform | Interfaz, lógica y protocolo del reloj — un solo código para Android y escritorio |
 | `watch-emulator/` | Compose Desktop                 | Emulador del reloj en el computador (demo y capturas) |
-| `ml/`      | Python, scikit-learn                 | *(Fase 4)* modelo de riesgo por zona               |
+| `ml/`      | Python, scikit-learn                 | Modelo de riesgo por zona entrenado con noticias (ver [ml/README.md](ml/README.md)) |
 
 ### Decisiones clave
 
@@ -141,12 +141,16 @@ app/src/main/java/com/andres/walksecurity/
 ## Roadmap
 
 - [x] **Fase 1** – Perfil sin inicio de sesión, GPS, mapa, contactos de confianza, botón SOS (SMS + registro en API)
-- [ ] **Fase 2** – Zonas de riesgo (API + mapa), Geofencing API en segundo plano, notificaciones y
-      umbral configurable (seguro < 0.4 ≤ precaución < 0.7 ≤ alerta)
+- [ ] **Fase 2** *(parcial)* – Hecho: zonas de riesgo en el mapa y detección automática con el GPS
+      **mientras la app está abierta** (seguro < 0.4 ≤ precaución < 0.7 ≤ alerta); al cambiar de nivel
+      se avisa al reloj. Falta: Geofencing API en segundo plano, notificaciones y servir las zonas desde la API
 - [x] **Fase 3** *(adelantada, prioridad del proyecto)* – Módulo `wear/`: 3 estados + SOS, vibración,
       comunicación con el teléfono (Wearable Data Layer). Mientras llega la fase 2, el estado de riesgo
       se prueba con el **simulador** de la pantalla *Reloj emulado* del teléfono.
-- [ ] **Fase 4** – Modelo scikit-learn (lat/lng, hora, día, histórico de incidentes) que actualiza `risk_zones.risk_score`
+- [ ] **Fase 4** *(parcial)* – Hecho: modelo scikit-learn (densidad por kernel) entrenado con noticias de
+      Pasto, empaquetado en la app (`app/src/main/assets/risk_zones.json`). Es de **confianza baja**: las
+      noticias dan pocos incidentes con barrio. Falta: más datos (p. ej. cifras oficiales), aprender el
+      efecto de la hora y el día, y actualizar `risk_zones.risk_score` en el servidor
 
 ## Cómo ejecutar y probar en tu teléfono (sin emulador)
 
