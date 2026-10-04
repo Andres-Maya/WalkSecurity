@@ -1,0 +1,402 @@
+{
+ "generatedAt": "2026-10-03",
+ "city": "Pasto, Nariño",
+ "source": "Titulares de noticias (Google News) + barrios de OpenStreetMap",
+ "disclaimer": "Estimación basada en noticias: no es una medición del delito ni garantiza que una persona esté o no en peligro.",
+ "model": {
+  "type": "KernelDensity (scikit-learn), haversine",
+  "bandwidthMeters": 900,
+  "halfLifeDays": 730,
+  "incidents": 50,
+  "confidence": "baja",
+  "dateRange": [
+   "2013-10-17",
+   "2026-09-29"
+  ]
+ },
+ "evaluation": {
+  "bandwidthM": 900,
+  "testIncidents": 13,
+  "hitRateTop20": 0.308,
+  "randomBaseline": 0.2,
+  "lift": 1.54,
+  "logLikelihood": 14.189
+ },
+ "thresholds": {
+  "caution": 0.4,
+  "alert": 0.7
+ },
+ "weekdayMultipliers": [
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0
+ ],
+ "hourMultipliers": [
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0,
+  1.0
+ ],
+ "zones": [
+  {
+   "name": "Las Violetas I",
+   "latitude": 1.202141,
+   "longitude": -77.276765,
+   "radiusMeters": 300,
+   "riskScore": 1.0,
+   "incidents": 0
+  },
+  {
+   "name": "Las Lunas I Etapa",
+   "latitude": 1.199312,
+   "longitude": -77.275179,
+   "radiusMeters": 300,
+   "riskScore": 0.978,
+   "incidents": 2
+  },
+  {
+   "name": "Ciudad Jardin",
+   "latitude": 1.199719,
+   "longitude": -77.280673,
+   "radiusMeters": 300,
+   "riskScore": 0.956,
+   "incidents": 0
+  },
+  {
+   "name": "Prados de Niza",
+   "latitude": 1.201578,
+   "longitude": -77.281144,
+   "radiusMeters": 300,
+   "riskScore": 0.934,
+   "incidents": 0
+  },
+  {
+   "name": "San Miguel",
+   "latitude": 1.203703,
+   "longitude": -77.280406,
+   "radiusMeters": 300,
+   "riskScore": 0.912,
+   "incidents": 1
+  },
+  {
+   "name": "Niza I",
+   "latitude": 1.200932,
+   "longitude": -77.281615,
+   "radiusMeters": 300,
+   "riskScore": 0.891,
+   "incidents": 1
+  },
+  {
+   "name": "María Isabel",
+   "latitude": 1.197128,
+   "longitude": -77.279753,
+   "radiusMeters": 300,
+   "riskScore": 0.869,
+   "incidents": 0
+  },
+  {
+   "name": "El Progreso",
+   "latitude": 1.197929,
+   "longitude": -77.273556,
+   "radiusMeters": 300,
+   "riskScore": 0.847,
+   "incidents": 0
+  },
+  {
+   "name": "La Vega",
+   "latitude": 1.195893,
+   "longitude": -77.27773,
+   "radiusMeters": 300,
+   "riskScore": 0.825,
+   "incidents": 0
+  },
+  {
+   "name": "El Aire Libre",
+   "latitude": 1.205525,
+   "longitude": -77.277884,
+   "radiusMeters": 300,
+   "riskScore": 0.803,
+   "incidents": 0
+  },
+  {
+   "name": "Mirador de Niza",
+   "latitude": 1.201692,
+   "longitude": -77.282434,
+   "radiusMeters": 300,
+   "riskScore": 0.781,
+   "incidents": 0
+  },
+  {
+   "name": "Medardo Bucheli",
+   "latitude": 1.206162,
+   "longitude": -77.279574,
+   "radiusMeters": 300,
+   "riskScore": 0.759,
+   "incidents": 0
+  },
+  {
+   "name": "Prados del Sur",
+   "latitude": 1.196145,
+   "longitude": -77.27982,
+   "radiusMeters": 300,
+   "riskScore": 0.737,
+   "incidents": 0
+  },
+  {
+   "name": "El Pilar",
+   "latitude": 1.194827,
+   "longitude": -77.276177,
+   "radiusMeters": 300,
+   "riskScore": 0.715,
+   "incidents": 3
+  },
+  {
+   "name": "Atahualpa",
+   "latitude": 1.205418,
+   "longitude": -77.281766,
+   "radiusMeters": 300,
+   "riskScore": 0.697,
+   "incidents": 1
+  },
+  {
+   "name": "San Martín",
+   "latitude": 1.195201,
+   "longitude": -77.274275,
+   "radiusMeters": 300,
+   "riskScore": 0.686,
+   "incidents": 0
+  },
+  {
+   "name": "Fátima",
+   "latitude": 1.202985,
+   "longitude": -77.273352,
+   "radiusMeters": 300,
+   "riskScore": 0.675,
+   "incidents": 2
+  },
+  {
+   "name": "Nueva Colombia",
+   "latitude": 1.198907,
+   "longitude": -77.282767,
+   "radiusMeters": 300,
+   "riskScore": 0.664,
+   "incidents": 0
+  },
+  {
+   "name": "Chapal",
+   "latitude": 1.194692,
+   "longitude": -77.279112,
+   "radiusMeters": 300,
+   "riskScore": 0.653,
+   "incidents": 1
+  },
+  {
+   "name": "Caicedo Alto",
+   "latitude": 1.201486,
+   "longitude": -77.284166,
+   "radiusMeters": 300,
+   "riskScore": 0.642,
+   "incidents": 0
+  },
+  {
+   "name": "La Alhambra",
+   "latitude": 1.205267,
+   "longitude": -77.274187,
+   "radiusMeters": 300,
+   "riskScore": 0.631,
+   "incidents": 0
+  },
+  {
+   "name": "Las Américas",
+   "latitude": 1.207715,
+   "longitude": -77.280745,
+   "radiusMeters": 300,
+   "riskScore": 0.62,
+   "incidents": 1
+  },
+  {
+   "name": "Salomón",
+   "latitude": 1.201559,
+   "longitude": -77.271581,
+   "radiusMeters": 300,
+   "riskScore": 0.609,
+   "incidents": 0
+  },
+  {
+   "name": "Tequendama",
+   "latitude": 1.198817,
+   "longitude": -77.283808,
+   "radiusMeters": 300,
+   "riskScore": 0.598,
+   "incidents": 0
+  },
+  {
+   "name": "Granada",
+   "latitude": 1.196817,
+   "longitude": -77.282614,
+   "radiusMeters": 300,
+   "riskScore": 0.587,
+   "incidents": 0
+  },
+  {
+   "name": "Santa Clara",
+   "latitude": 1.195403,
+   "longitude": -77.271671,
+   "radiusMeters": 300,
+   "riskScore": 0.576,
+   "incidents": 0
+  },
+  {
+   "name": "Caicedo Bajo",
+   "latitude": 1.199694,
+   "longitude": -77.284344,
+   "radiusMeters": 300,
+   "riskScore": 0.565,
+   "incidents": 0
+  },
+  {
+   "name": "Condominio Bellavista",
+   "latitude": 1.207329,
+   "longitude": -77.28279,
+   "radiusMeters": 300,
+   "riskScore": 0.554,
+   "incidents": 0
+  },
+  {
+   "name": "Condominio Santa María de Fátima",
+   "latitude": 1.204058,
+   "longitude": -77.272474,
+   "radiusMeters": 300,
+   "riskScore": 0.543,
+   "incidents": 0
+  },
+  {
+   "name": "Los Balcones",
+   "latitude": 1.205276,
+   "longitude": -77.28447,
+   "radiusMeters": 300,
+   "riskScore": 0.532,
+   "incidents": 0
+  },
+  {
+   "name": "Casa Bella I",
+   "latitude": 1.206162,
+   "longitude": -77.284195,
+   "radiusMeters": 300,
+   "riskScore": 0.522,
+   "incidents": 0
+  },
+  {
+   "name": "Villa Lucía",
+   "latitude": 1.206907,
+   "longitude": -77.283725,
+   "radiusMeters": 300,
+   "riskScore": 0.511,
+   "incidents": 0
+  },
+  {
+   "name": "Los Fundadores",
+   "latitude": 1.195695,
+   "longitude": -77.282645,
+   "radiusMeters": 300,
+   "riskScore": 0.5,
+   "incidents": 1
+  },
+  {
+   "name": "Bachué",
+   "latitude": 1.204341,
+   "longitude": -77.285278,
+   "radiusMeters": 300,
+   "riskScore": 0.489,
+   "incidents": 1
+  },
+  {
+   "name": "Boyacá",
+   "latitude": 1.208758,
+   "longitude": -77.282555,
+   "radiusMeters": 300,
+   "riskScore": 0.478,
+   "incidents": 0
+  },
+  {
+   "name": "Venecia",
+   "latitude": 1.200958,
+   "longitude": -77.270172,
+   "radiusMeters": 300,
+   "riskScore": 0.467,
+   "incidents": 0
+  },
+  {
+   "name": "San Andresito",
+   "latitude": 1.209728,
+   "longitude": -77.280635,
+   "radiusMeters": 300,
+   "riskScore": 0.456,
+   "incidents": 0
+  },
+  {
+   "name": "La Rosa",
+   "latitude": 1.192319,
+   "longitude": -77.27533,
+   "radiusMeters": 300,
+   "riskScore": 0.445,
+   "incidents": 0
+  },
+  {
+   "name": "Los Álamos",
+   "latitude": 1.207694,
+   "longitude": -77.28426,
+   "radiusMeters": 300,
+   "riskScore": 0.434,
+   "incidents": 1
+  },
+  {
+   "name": "San Sebastián",
+   "latitude": 1.196739,
+   "longitude": -77.284119,
+   "radiusMeters": 300,
+   "riskScore": 0.423,
+   "incidents": 0
+  },
+  {
+   "name": "Javeriano",
+   "latitude": 1.20687,
+   "longitude": -77.273104,
+   "radiusMeters": 300,
+   "riskScore": 0.412,
+   "incidents": 0
+  },
+  {
+   "name": "Terrazas de Chapal",
+   "latitude": 1.193513,
+   "longitude": -77.280933,
+   "radiusMeters": 300,
+   "riskScore": 0.401,
+   "incidents": 0
+  }
+ ]
+}

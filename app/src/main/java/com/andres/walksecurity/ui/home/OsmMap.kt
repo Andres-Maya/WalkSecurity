@@ -8,7 +8,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -18,12 +17,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.andres.walksecurity.BuildConfig
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.ColorUtils
 import com.andres.walksecurity.core.model.GeoPoint
+import com.andres.walksecurity.core.risk.RiskZone
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polygon
 import java.io.File
 import org.osmdroid.util.GeoPoint as OsmPoint
 
@@ -32,16 +35,17 @@ import org.osmdroid.util.GeoPoint as OsmPoint
  * MAPS_API_KEY de Google Maps en local.properties.
  */
 @Composable
-fun OsmMap(location: GeoPoint?, modifier: Modifier = Modifier) {
+fun OsmMap(location: GeoPoint?, zones: List<RiskZone>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val mapView = remember { createMapView(context) }
+    val mapView = remember { createMapView(context).also { drawZones(it, zones) } }
     val marker = remember {
         Marker(mapView).apply {
             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             title = "Estás aquí"
         }
     }
-    var centeredOnUser by rememberSaveable { mutableStateOf(false) }
+    // remember (no rememberSaveable): si el mapa se vuelve a crear, hay que centrarlo otra vez
+    var centeredOnUser by remember { mutableStateOf(false) }
 
     // osmdroid necesita enterarse del ciclo de vida para pausar la descarga de mosaicos
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -68,10 +72,31 @@ fun OsmMap(location: GeoPoint?, modifier: Modifier = Modifier) {
         if (marker !in view.overlays) view.overlays.add(marker)
         if (!centeredOnUser) {
             centeredOnUser = true
-            view.controller.setZoom(16.5)
-            view.controller.animateTo(point)
+            // post: antes de que el mapa tenga tamaño, osmdroid centra mal (el punto queda en una esquina).
+            // Zoom 15: se ve la persona y las zonas de riesgo de alrededor (~1 km)
+            view.post {
+                view.controller.setZoom(15.0)
+                view.controller.setCenter(point)
+            }
         }
         view.invalidate()
+    }
+}
+
+/** Círculos translúcidos de las zonas con riesgo estimado (ámbar = precaución, rojo = alerta). */
+private fun drawZones(map: MapView, zones: List<RiskZone>) {
+    // Primero las de menor riesgo, para que las de alerta queden encima
+    zones.sortedBy { it.riskScore }.forEach { zone ->
+        val color = zone.level.mapColor().toArgb()
+        map.overlays.add(
+            Polygon(map).apply {
+                points = Polygon.pointsAsCircle(OsmPoint(zone.latitude, zone.longitude), zone.radiusMeters.toDouble())
+                fillPaint.color = ColorUtils.setAlphaComponent(color, 60)
+                outlinePaint.color = color
+                outlinePaint.strokeWidth = 3f
+                title = zone.name
+            }
+        )
     }
 }
 

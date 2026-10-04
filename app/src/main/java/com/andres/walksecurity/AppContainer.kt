@@ -3,6 +3,7 @@ package com.andres.walksecurity
 import android.content.Context
 import com.andres.walksecurity.core.contacts.PhoneContactsReader
 import com.andres.walksecurity.core.location.LocationClient
+import com.andres.walksecurity.core.risk.ZoneDetector
 import com.andres.walksecurity.core.sms.SmsSender
 import com.andres.walksecurity.data.local.SessionStore
 import com.andres.walksecurity.data.remote.ApiClient
@@ -36,6 +37,9 @@ class AppContainer(private val context: Context) {
     val contactsRepository = ContactsRepository(api, sessionStore, serverAccount, appScope)
     val alertRepository = AlertRepository(api, sessionStore, serverAccount, locationClient, smsSender, appScope)
     val riskStatusRepository = RiskStatusRepository(watchBridge)
+
+    /** Zonas de riesgo del modelo (ml/) y detección automática con el GPS. */
+    val zoneDetector = ZoneDetector(context, riskStatusRepository)
 
     /**
      * Reloj emulado en el teléfono. Vive en el scope de la app para que "vibre en la muñeca"

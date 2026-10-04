@@ -56,6 +56,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.andres.walksecurity.core.model.GeoPoint
 import com.andres.walksecurity.core.model.Profile
+import com.andres.walksecurity.shared.RiskLevel
+import com.andres.walksecurity.shared.RiskStatus
+import com.andres.walksecurity.ui.theme.AlertRed
+import com.andres.walksecurity.ui.theme.CautionAmber
+import com.andres.walksecurity.ui.theme.SafeGreen
 import com.andres.walksecurity.ui.components.FormTextField
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -80,6 +85,9 @@ fun HomeScreen(
     var editingProfile by rememberSaveable { mutableStateOf(false) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val location by viewModel.location.collectAsStateWithLifecycle()
+    val risk by viewModel.risk.collectAsStateWithLifecycle()
+    // Detección automática: cada posición del GPS se compara con las zonas de riesgo
+    LaunchedEffect(location) { location?.let(viewModel::onLocation) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -135,6 +143,7 @@ fun HomeScreen(
         ) {
             SafetyMap(
                 location = location,
+                zones = viewModel.zones,
                 myLocationEnabled = state.permissions.location,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,6 +171,7 @@ fun HomeScreen(
                     },
                 )
                 StatusCard(
+                    risk = risk,
                     userName = state.profile.name.ifBlank { null },
                     onEditProfile = { editingProfile = true },
                     location = location,
@@ -305,8 +315,36 @@ private fun WatchCard(watch: WatchUi, onOpenWatch: () -> Unit) {
     }
 }
 
+/** Nivel de riesgo estimado de la zona actual, con el mismo color que usa el reloj. */
+@Composable
+private fun RiskLine(risk: RiskStatus?) {
+    val (label, color) = when (risk?.level) {
+        RiskLevel.ALERT -> "Alerta" to AlertRed
+        RiskLevel.CAUTION -> "Precaución" to CautionAmber
+        RiskLevel.SAFE -> "Zona segura" to SafeGreen
+        null -> "Zona sin evaluar" to Color.Gray
+    }
+    val detail = listOfNotNull(risk?.zoneName, "simulado".takeIf { risk?.simulated == true }).joinToString(" · ")
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(12.dp).background(color, CircleShape))
+        Text(
+            "  $label" + if (detail.isNotEmpty()) " · $detail" else "",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+    if (risk != null && risk.level != RiskLevel.SAFE) {
+        Text(
+            "Riesgo estimado a partir de noticias: no es una garantía.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
 @Composable
 private fun StatusCard(
+    risk: RiskStatus?,
     userName: String?,
     onEditProfile: () -> Unit,
     location: GeoPoint?,
@@ -323,6 +361,7 @@ private fun StatusCard(
                 )
                 if (userName != null) TextButton(onClick = onEditProfile) { Text("Editar") }
             }
+            RiskLine(risk)
             Text(
                 text = location?.let {
                     val accuracy = it.accuracyMeters?.let { a -> " · ±${a.toInt()} m" }.orEmpty()

@@ -9,6 +9,11 @@ import com.andres.walksecurity.core.location.LocationClient
 import com.andres.walksecurity.core.model.GeoPoint
 import com.andres.walksecurity.core.model.SosResult
 import com.andres.walksecurity.core.model.Profile
+import com.andres.walksecurity.core.risk.RiskZone
+import com.andres.walksecurity.core.risk.ZoneDetector
+import com.andres.walksecurity.data.repository.RiskStatusRepository
+import com.andres.walksecurity.shared.RiskStatus
+import com.andres.walksecurity.watch.WatchController
 import com.andres.walksecurity.core.model.Validators
 import com.andres.walksecurity.core.sms.SmsSender
 import com.andres.walksecurity.data.repository.AlertRepository
@@ -66,7 +71,22 @@ class HomeViewModel(
     private val locationClient: LocationClient,
     private val smsSender: SmsSender,
     private val watchBridge: WatchBridge,
+    private val zoneDetector: ZoneDetector,
+    riskStatusRepository: RiskStatusRepository,
+    /** El reloj emulado hace vibrar el teléfono al subir el riesgo (no hay reloj físico). */
+    @Suppress("unused") private val emulatedWatch: WatchController,
 ) : ViewModel() {
+
+    /** Zonas de riesgo estimado que se dibujan en el mapa. */
+    val zones: List<RiskZone> = zoneDetector.model.zones
+
+    /** Nivel de riesgo actual (detectado por GPS o elegido en el simulador). */
+    val risk: StateFlow<RiskStatus?> = riskStatusRepository.current
+
+    /** Cada posición nueva se compara con las zonas; si cambia el nivel se avisa al reloj. */
+    fun onLocation(point: GeoPoint) {
+        viewModelScope.launch { zoneDetector.onLocation(point) }
+    }
 
     private val permissions = MutableStateFlow(PermissionsState())
     private val sos = MutableStateFlow<SosState>(SosState.Idle)
@@ -170,7 +190,10 @@ class HomeViewModel(
         val Factory = viewModelFactory {
             initializer {
                 with(appContainer) {
-                    HomeViewModel(sessionStore, contactsRepository, alertRepository, locationClient, smsSender, watchBridge)
+                    HomeViewModel(
+                        sessionStore, contactsRepository, alertRepository, locationClient, smsSender, watchBridge,
+                        zoneDetector, riskStatusRepository, emulatedWatch,
+                    )
                 }
             }
         }
