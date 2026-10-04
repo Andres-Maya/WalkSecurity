@@ -52,6 +52,24 @@ Reloj del PC ──JSON por línea, localhost:8766──(adb reverse, cable USB)
 El protocolo (`watch-core/.../shared/DesktopLink.kt`) cumple el mismo papel que el Wearable Data Layer
 con un reloj real. El emulador escucha solo en `localhost`: no queda expuesto a la red.
 
+## Página web (documentación, simulador y descargas)
+
+La carpeta `web/` es un sitio estático (sin paso de compilación) con la documentación, un simulador del
+reloj que funciona en el navegador y los botones para descargar los APK del teléfono y del reloj.
+
+- **Actualizar los APK** que ofrece la página (compila las dos apps y las copia a `web/downloads/`):
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/web-apks.ps1
+```
+
+- **Publicar en Vercel:** en [vercel.com/new](https://vercel.com/new) importa el repositorio de GitHub y en
+  *Root Directory* elige `web`. Framework: *Other*; sin comando de build. Cada `git push` vuelve a publicar.
+- **Verla en local:** `python -m http.server 5173 --directory web` y abre `http://localhost:5173`.
+
+El simulador web (`web/sim.js`) replica las reglas de `WatchController` y las pantallas de `WatchApp`;
+si cambias la lógica del reloj, actualízalo también.
+
 ## Arquitectura
 
 ```
@@ -81,9 +99,9 @@ Monolito modular cliente-servidor (sin microservicios por ahora):
   futuros canales push).
 - **Offline-first:** los contactos se guardan primero en el teléfono y se sincronizan en segundo plano.
   Nunca se borra un contacto de emergencia por algo que pase en el servidor (ver `ContactsMerger`).
-- **Modo local:** si no hay servidor, se puede usar la app sin cuenta (*Usar sin cuenta* en el login).
-  Al crear la cuenta después, los contactos se suben solos. Si la sesión expira, la app pasa a modo local
-  sin perder datos.
+- **Sin inicio de sesión:** la app abre directo en la pantalla principal; solo pide tu nombre (para los
+  SMS). Si el backend está disponible, el teléfono se identifica solo (`POST /api/auth/device` con un ID
+  aleatorio del dispositivo) y respalda contactos y alertas. Si no lo está, no se muestra ningún error.
 - **Cuenta regresiva de 5 s** antes de enviar el SOS para evitar falsas alarmas; se puede enviar
   de inmediato o cancelar.
 - El envío del SOS corre en un scope de aplicación: no se cancela si el usuario cambia de pantalla.
@@ -122,7 +140,7 @@ app/src/main/java/com/andres/walksecurity/
 
 ## Roadmap
 
-- [x] **Fase 1** – Registro/login, GPS, mapa, contactos de confianza, botón SOS (SMS + registro en API)
+- [x] **Fase 1** – Perfil sin inicio de sesión, GPS, mapa, contactos de confianza, botón SOS (SMS + registro en API)
 - [ ] **Fase 2** – Zonas de riesgo (API + mapa), Geofencing API en segundo plano, notificaciones y
       umbral configurable (seguro < 0.4 ≤ precaución < 0.7 ≤ alerta)
 - [x] **Fase 3** *(adelantada, prioridad del proyecto)* – Módulo `wear/`: 3 estados + SOS, vibración,
@@ -132,7 +150,7 @@ app/src/main/java/com/andres/walksecurity/
 
 ## Cómo ejecutar y probar en tu teléfono (sin emulador)
 
-### 1. Backend (opcional: la app funciona en modo local sin él)
+### 1. Backend (opcional: la app funciona igual sin él)
 
 Ejecútalo en **tu propia terminal** y déjala abierta. Usa el PostgreSQL instalado en Windows
 (sin Docker, mucho menos memoria), hace `adb reverse` y arranca el backend con 256 MB:
@@ -193,12 +211,12 @@ Desde Android Studio (▶ Run con el teléfono seleccionado) o:
 
 ### 5. Prueba de humo
 
-1. Regístrate (o *Usar sin cuenta* si el backend no está corriendo) → se piden permisos de ubicación y SMS.
+1. Abre la app → se piden permisos de ubicación y SMS → escribe tu nombre en la tarjeta de la pantalla principal.
 2. **Agregar desde contactos** abre la agenda del teléfono: elige un número (usa **tu propio número** u
    otro teléfono tuyo para probar). La app no pide permiso para leer toda la agenda: Android solo le
    entrega el contacto elegido. El lápiz de la barra superior permite escribirlo a mano.
 3. Pulsa **SOS** → cuenta regresiva → llega un SMS con el enlace de Google Maps.
-4. En la consola del backend aparece `Alerta SOS #...` y el registro queda en la tabla `alerts`.
+4. Si el backend está corriendo, en su consola aparece `Alerta SOS #...` y queda en la tabla `alerts`.
 
 > Los SMS los cobra tu operador según tu plan.
 
@@ -254,7 +272,7 @@ adb connect IP_DEL_RELOJ:PUERTO
 
 | Síntoma | Causa / solución |
 |---------|------------------|
-| "No se pudo conectar con el servidor" | 1) El backend no está corriendo: ejecuta `scripts/dev-up.ps1` en tu terminal. 2) `adb devices` no muestra el teléfono → reconecta el cable. 3) Falta `adb reverse tcp:8080 tcp:8080` (se pierde al desconectar). Mientras tanto usa **Usar sin cuenta (modo local)**. |
+| Los contactos o alertas no aparecen en la base de datos | El respaldo es automático y silencioso: requiere el backend corriendo (`scripts/dev-up.ps1` en tu terminal) y el túnel `adb reverse tcp:8080 tcp:8080` (se pierde al desconectar el cable). La app funciona igual sin él. |
 | Todo va muy lento / el backend se cae | El equipo tiene ~6 GB de RAM. Cierra Docker Desktop (usa `dev-up.ps1` sin `-Docker`) y lo que no uses. Kotlin compila dentro de Gradle (`gradle.properties`) para no abrir otro proceso. |
 | Docker Desktop se cierra al iniciar con `...dockerInference` o `engine.sock: The file cannot be accessed by the system` | Sockets huérfanos de una sesión anterior. Con Docker cerrado, renombra `%LOCALAPPDATA%\Docker\run` y `%LOCALAPPDATA%\docker-secrets-engine` y vuelve a abrir Docker. |
 | `la autentificación password falló para el usuario "walksecurity"` | Un PostgreSQL instalado en Windows ocupa el 5432. El contenedor usa el **5433** para evitarlo. |
