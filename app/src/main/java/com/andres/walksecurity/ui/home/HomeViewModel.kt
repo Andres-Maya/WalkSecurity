@@ -11,6 +11,7 @@ import com.andres.walksecurity.core.model.SosResult
 import com.andres.walksecurity.core.model.Profile
 import com.andres.walksecurity.core.risk.RiskZone
 import com.andres.walksecurity.core.risk.ZoneDetector
+import com.andres.walksecurity.core.risk.ZoneGeofencing
 import com.andres.walksecurity.data.repository.RiskStatusRepository
 import com.andres.walksecurity.shared.RiskStatus
 import com.andres.walksecurity.watch.WatchController
@@ -72,6 +73,7 @@ class HomeViewModel(
     private val smsSender: SmsSender,
     private val watchBridge: WatchBridge,
     private val zoneDetector: ZoneDetector,
+    private val zoneGeofencing: ZoneGeofencing,
     riskStatusRepository: RiskStatusRepository,
     /** El reloj emulado hace vibrar el teléfono al subir el riesgo (no hay reloj físico). */
     @Suppress("unused") private val emulatedWatch: WatchController,
@@ -122,6 +124,8 @@ class HomeViewModel(
         contactsRepository.requestSync()
     }
 
+    private var geofencesRegistered = false
+
     /** Se llama al entrar y al volver a la pantalla (p. ej. desde Ajustes). */
     fun refreshPermissions() {
         permissions.value = PermissionsState(
@@ -129,6 +133,11 @@ class HomeViewModel(
             backgroundLocation = locationClient.hasBackgroundPermission(),
             sms = smsSender.hasPermission(),
         )
+        // Al conceder "Todo el tiempo" se activa la detección en segundo plano sin reiniciar la app
+        if (zoneGeofencing.hasPermissions() && !geofencesRegistered) {
+            geofencesRegistered = true
+            viewModelScope.launch { geofencesRegistered = zoneGeofencing.register() }
+        }
         viewModelScope.launch {
             val connected = watchBridge.isWatchConnected()
             watch.update { it.copy(connected = connected) }
@@ -192,7 +201,7 @@ class HomeViewModel(
                 with(appContainer) {
                     HomeViewModel(
                         sessionStore, contactsRepository, alertRepository, locationClient, smsSender, watchBridge,
-                        zoneDetector, riskStatusRepository, emulatedWatch,
+                        zoneDetector, zoneGeofencing, riskStatusRepository, emulatedWatch,
                     )
                 }
             }

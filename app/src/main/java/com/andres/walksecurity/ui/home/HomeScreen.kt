@@ -68,11 +68,13 @@ import com.andres.walksecurity.ui.theme.SosRed
 import com.andres.walksecurity.ui.theme.SosRedDark
 import java.util.Locale
 
-private val REQUIRED_PERMISSIONS = arrayOf(
-    Manifest.permission.ACCESS_FINE_LOCATION,
-    Manifest.permission.ACCESS_COARSE_LOCATION,
-    Manifest.permission.SEND_SMS,
-)
+private val REQUIRED_PERMISSIONS = buildList {
+    add(Manifest.permission.ACCESS_FINE_LOCATION)
+    add(Manifest.permission.ACCESS_COARSE_LOCATION)
+    add(Manifest.permission.SEND_SMS)
+    // Android 13+: aviso al entrar en una zona de riesgo con la app cerrada
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+}.toTypedArray()
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -240,8 +242,8 @@ private fun BackgroundLocationHint(onRequest: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Para que el SOS del reloj incluya tu ubicación con el teléfono bloqueado, " +
-                    "permite la ubicación \"Todo el tiempo\".",
+                "Para avisarte de las zonas de riesgo con la app cerrada y que el SOS del reloj " +
+                    "incluya tu ubicación, permite la ubicación \"Todo el tiempo\".",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.weight(1f),
             )

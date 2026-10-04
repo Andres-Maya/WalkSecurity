@@ -7,8 +7,13 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.SEND_SMS" />
-    <!-- SOS desde el reloj con la pantalla del teléfono apagada; también lo necesitará el geofencing (fase 2) -->
+    <!-- SOS desde el reloj con la pantalla del teléfono apagada y detección de zonas en segundo plano -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Aviso al entrar en una zona de riesgo con la app cerrada -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Las geocercas se pierden al reiniciar: se registran de nuevo -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- La app funciona en tablets sin SIM: el SOS se registra en el servidor aunque no haya SMS -->
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
@@ -54,6 +59,18 @@
                     android:scheme="wear" />
             </intent-filter>
         </service>
+        <!-- Entradas y salidas de las zonas de riesgo (Geofencing API) -->
+        <receiver
+            android:name=".core.risk.GeofenceReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".core.risk.GeofenceRestoreReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

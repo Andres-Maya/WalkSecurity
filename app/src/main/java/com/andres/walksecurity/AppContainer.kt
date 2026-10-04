@@ -3,7 +3,9 @@ package com.andres.walksecurity
 import android.content.Context
 import com.andres.walksecurity.core.contacts.PhoneContactsReader
 import com.andres.walksecurity.core.location.LocationClient
+import com.andres.walksecurity.core.risk.RiskNotifier
 import com.andres.walksecurity.core.risk.ZoneDetector
+import com.andres.walksecurity.core.risk.ZoneGeofencing
 import com.andres.walksecurity.core.sms.SmsSender
 import com.andres.walksecurity.data.local.SessionStore
 import com.andres.walksecurity.data.remote.ApiClient
@@ -40,6 +42,10 @@ class AppContainer(private val context: Context) {
 
     /** Zonas de riesgo del modelo (ml/) y detección automática con el GPS. */
     val zoneDetector = ZoneDetector(context, riskStatusRepository)
+
+    /** Detección con la app cerrada (geocercas del sistema) y su notificación. */
+    val zoneGeofencing = ZoneGeofencing(context, zoneDetector.model.zones)
+    val riskNotifier = RiskNotifier(context)
 
     /**
      * Reloj emulado en el teléfono. Vive en el scope de la app para que "vibre en la muñeca"

@@ -5,13 +5,15 @@ import android.util.Log
 import com.andres.walksecurity.core.model.GeoPoint
 import com.andres.walksecurity.data.remote.AppJson
 import com.andres.walksecurity.data.repository.RiskStatusRepository
+import com.andres.walksecurity.shared.RiskLevel
+import com.andres.walksecurity.shared.RiskStatus
 
 /**
  * Detección automática de zonas: con cada posición del GPS decide el nivel de riesgo y, si cambió
  * (otra zona u otro nivel), lo publica al reloj. Solo publica cambios, así que una zona elegida a
  * mano en el simulador se mantiene hasta que el GPS detecte un cambio real.
  *
- * Por ahora funciona con la app abierta; en segundo plano requerirá la Geofencing API.
+ * La alimentan el GPS con la app abierta (HomeViewModel) y las geocercas en segundo plano (GeofenceReceiver).
  */
 class ZoneDetector(
     context: Context,
@@ -26,15 +28,20 @@ class ZoneDetector(
     }
 
     private val evaluator = ZoneRiskEvaluator(model)
-    private var lastPublished: Pair<String?, Any>? = null
+    private var lastPublished: Pair<String?, RiskLevel>? = null
 
-    suspend fun onLocation(location: GeoPoint) {
-        if (model.zones.isEmpty()) return
+    /** @return el nuevo estado si cambió la zona o el nivel; null si sigue igual. */
+    suspend fun onLocation(location: GeoPoint): RiskStatus? {
+        if (model.zones.isEmpty()) return null
         val status = evaluator.evaluate(location.latitude, location.longitude, System.currentTimeMillis())
         val key = status.zoneName to status.level
-        if (key == lastPublished) return
-        lastPublished = key
+        // Las dos fuentes (GPS y geocercas) pueden llegar a la vez desde hilos distintos
+        synchronized(this) {
+            if (key == lastPublished) return null
+            lastPublished = key
+        }
         riskStatusRepository.publish(status)
+        return status
     }
 
     private companion object {
