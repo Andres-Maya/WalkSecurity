@@ -24,8 +24,15 @@ data class SmsReport(val sent: Int, val error: String? = null)
 
 class SmsSender(private val context: Context) {
 
-    fun hasTelephony(): Boolean =
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_MESSAGING)
+    /**
+     * FEATURE_TELEPHONY_MESSAGING solo existe desde Android 13: en versiones anteriores ningún
+     * teléfono lo declara, así que ahí se pregunta por la telefonía en general.
+     */
+    fun hasTelephony(): Boolean = with(context.packageManager) {
+        hasSystemFeature(PackageManager.FEATURE_TELEPHONY) ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                hasSystemFeature(PackageManager.FEATURE_TELEPHONY_MESSAGING))
+    }
 
     fun hasPermission(): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) ==
