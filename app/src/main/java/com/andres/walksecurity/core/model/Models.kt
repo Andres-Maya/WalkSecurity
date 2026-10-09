@@ -50,4 +50,9 @@ data class SosResult(
     val smsSent: Int,
     val smsAvailable: Boolean,
     val serverRegistered: Boolean,
+    /** Motivo por el que algún SMS no salió (sin saldo, sin señal...). null si salieron todos. */
+    val smsError: String? = null,
+    /** Texto y destinatarios, para reenviar a mano desde la app de Mensajes si el envío automático falla. */
+    val message: String = "",
+    val phones: List<String> = emptyList(),
 )

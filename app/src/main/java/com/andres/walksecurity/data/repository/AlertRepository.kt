@@ -39,9 +39,7 @@ class AlertRepository(
         val message = SosMessageBuilder.build(profile.name, location, System.currentTimeMillis(), fromWatch = fromWatch)
 
         // 1) SMS primero: es el canal que funciona sin internet
-        val smsSent = withContext(Dispatchers.IO) {
-            contacts.count { smsSender.send(it.phone, message) }
-        }
+        val sms = withContext(Dispatchers.IO) { smsSender.sendAll(contacts.map { it.phone }, message) }
 
         // 2) Registro en el servidor (historial), solo si está disponible: nunca retrasa ni bloquea los SMS
         val registered = serverAccount.ensureToken() && apiCall {
@@ -59,9 +57,12 @@ class AlertRepository(
         return SosResult(
             location = location,
             contactsTotal = contacts.size,
-            smsSent = smsSent,
+            smsSent = sms.sent,
             smsAvailable = smsSender.canSend(),
             serverRegistered = registered,
+            smsError = sms.error,
+            message = message,
+            phones = contacts.map { it.phone },
         )
     }
 }

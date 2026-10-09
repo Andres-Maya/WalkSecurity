@@ -24,6 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andres.walksecurity.core.model.SosMessageBuilder
+import com.andres.walksecurity.core.model.Validators
+import androidx.compose.material3.OutlinedButton
 import com.andres.walksecurity.core.model.SosResult
 import com.andres.walksecurity.ui.theme.SosRed
 
@@ -111,6 +113,21 @@ private fun SosResultDialog(result: SosResult, onDismiss: () -> Unit) {
                         else -> "SMS enviados: ${result.smsSent} de ${result.contactsTotal} contactos."
                     }
                 )
+                result.smsError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                // Plan B que sirve con cualquier contacto: la app de Mensajes con todo ya escrito
+                if (result.smsSent < result.contactsTotal && result.phones.isNotEmpty()) {
+                    OutlinedButton(
+                        onClick = {
+                            val to = result.phones.joinToString(";") { Validators.normalizePhone(it) }
+                            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$to"))
+                                .putExtra("sms_body", result.message)
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: ActivityNotFoundException) {
+                            }
+                        },
+                    ) { Text("Enviar desde Mensajes") }
+                }
                 if (result.serverRegistered) Text("Alerta registrada también en el servidor.")
                 Text(
                     result.location?.let { "Ubicación: ${SosMessageBuilder.mapsUrl(it)}" }
